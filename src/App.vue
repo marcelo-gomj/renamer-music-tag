@@ -1,35 +1,28 @@
 <template>
-	<div class="flex flex-col gap-6 relative h-[100vh] w-full p-4 px-6">
-		<FilePatternsRefence />
-
-		<div class="flex gap-4 overflow-y-hidden h-full">
-			<ManageFiles />
-			<MetadatasFields />
-		</div>
-	</div>
+	<Layout />
 </template>
 
 <script setup lang="ts">
-import { watch, provide, ref, watchEffect } from 'vue';
-import FilePatternsRefence from './components/FilePatternsRefence.vue';
-import ManageFiles from './components/SystemFiles/ManageFiles.vue';
-import MetadatasFields from './components/MetadatasFields.vue';
-import { GeneratedMetas } from './types/metas-type';
+import { watch, provide, ref } from 'vue';
+import { MetaResult } from './types/metas-type';
+
+import Layout from './Layout.vue';
 const {generateMetasByDir} = window.api.metas
 
 
-const currentDir = ref("");
-const metas = ref<GeneratedMetas[]>()
+const currentDir = ref<string[]>([]);
+const metas = ref<MetaResult[]>();
 
 watch(currentDir, async () => {
-
-	const musicFiles = await generateMetasByDir(currentDir.value);
+	const musicFiles = await generateMetasByDir([...currentDir.value]);
+	
 	if(musicFiles){
 		metas.value = musicFiles
+		
 	}
 })
 
-function addSourceDir(sourcePath: string){
+function addSourceDir(sourcePath: string[]){
 	currentDir.value = sourcePath;
 }
 
