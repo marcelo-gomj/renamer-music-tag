@@ -1,8 +1,7 @@
-import { dialog, ipcRenderer } from "electron";
+import { dialog, ipcRenderer, OpenDialogOptions } from "electron";
 
-async function selectMusicsSources(){
-  return await ipcRenderer.invoke("open-dialog");
-
+async function selectMusicsSources(selectOptions: OpenDialogOptions["properties"] ) : Promise<string[]>{
+  return await ipcRenderer.invoke("open-dialog", selectOptions);
 }
 
 

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, OpenDialogOptions } from 'electron';
 import path from 'path';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -57,7 +57,7 @@ app.on('activate', () => {
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and import them here.
 
-ipcMain.handle('open-dialog', async () => {
-  const result = await dialog.showOpenDialog({properties : ["openDirectory"]});
+ipcMain.handle('open-dialog', async (_, properties: OpenDialogOptions["properties"] ) => {
+  const result = await dialog.showOpenDialog({properties : ["multiSelections", ...properties]});
   return result.filePaths
 })
