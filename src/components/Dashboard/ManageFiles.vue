@@ -1,5 +1,5 @@
 <template>
-  <div class="flex relative group select-none flex-col w-1/2 overflow-hidden h-full">
+  <div :class="`flex relative group select-none flex-col ${metas ? 'w-[55%]' : 'w-full'} overflow-hidden h-full`">
     <ToolsMenu />
 
     <div class="h-full">
@@ -8,7 +8,7 @@
         class="flex justify-between cursor-pointer items-center font-medium text-x1 tracking-wider pb-1.5"
         @click="toggleFilesMusicList"
       >
-        <div>{{ currentDir }}</div>
+        <div>Arquivos referenciados</div>
   
         <div :class="`group-hover:visible invisible p-1.5 ${openListMusics ? 'rotate-180' : ''}`">
           <ChevronDown :class="`w-5 h-5 stroke-[2.5] `" />
@@ -22,15 +22,15 @@
           class="relative h-full overflow-y-hidden"
         >
           <div :class="`z-50 h-full overflow-y-scroll hide-scrollbar ${openListMusics ? 'invisible' : ''}`">
-            <div v-for="meta of metas"
-              class="text-base-white-700 pl-6 mr-1 rounded-sm z-[999] hover:text-base-white-200 text-x1 py-1 my-0.5 font-medium cursor-pointer hover:bg-base-dark-400">
-              {{ meta.path }}
+            <div class="relative">
+              <div v-for="meta of metas"
+                class="text-base-white-700 line-clamp-1 pl-6 mr-2 p-4 rounded-sm z-[999] hover:text-base-white-200 text-x1 py-1 my-0.5 font-medium cursor-pointer hover:bg-base-dark-400">
+                {{ meta.path }}
+              </div>
+              <div :class="`absolute w-0.5 rounded-full left-1.5 top-0 h-full bg-base-dark-400 ${openListMusics ? 'invisible' : ''}`" />
             </div>
           </div>
     
-          <div
-            :class="`absolute w-0.5 rounded-full left-1.5 top-0 h-full bg-base-dark-400 ${openListMusics ? 'invisible' : ''}`">
-          </div>"
     
         </div>
 
@@ -58,19 +58,18 @@
 
 <script setup lang="ts">
 import { inject, ref } from "vue";
-import ToolsMenu from "../ToolsMenu.vue";
+import ToolsMenu from "../Dashboard/ToolsMenu.vue";
 import { ChevronDown, FolderSearch } from 'lucide-vue-next';
-import FilesContainer from './FilesContainer.vue';
 import { MetaResult } from "src/types/metas-type";
+import { SourceSelectProps } from "src/types/vue-types";
 const filePath = "D:/Músicas/Red Hot Chilly Peppers - 2001 Century";
 
 let openListMusics = ref(false);
-const { addSourceDir, currentDir } = inject("sourceDir");
-console.log(currentDir.value)
+const { addSourceDir, currentDir } = inject<SourceSelectProps>("sourceDir");
 
 async function selectFolderSource(){
-  const [path] = await window.api.explorer.selectMusicsSources();
-  addSourceDir(path)
+  const paths = await window.api.explorer.selectMusicsSources(["openDirectory"]);
+  addSourceDir(paths)
 } 
 
 const hasSourceDir = currentDir;
