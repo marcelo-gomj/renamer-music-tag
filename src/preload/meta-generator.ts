@@ -1,6 +1,6 @@
 import { includes, init, filter, join, last, map, reduce, split, tail, slice, nth, juxt } from "ramda";
 import * as R from "ramda";
-import { readdir } from "fs/promises";
+import { readdir, stat } from "fs/promises";
 import {  ObjectTransformer, MetaObjectResult, MetasAsMethod, MetaResult } from "../types/metas-type";
 
 const matchFeatArtist = R.match(/(?<=(feat|ft|part)\..?)(\w+(\s|_|-|.))+/ig);
@@ -83,21 +83,21 @@ const metaObjectFunction : ObjectTransformer = {
 
 const generateMetasByMethods = generateMetas(metaObjectFunction);
 
-function filterInMusicFiles(allFiles: string[]){
-  const suportedFiles = [
-    "mp3", "mp4", "flac", 
-    "ogg", "mkv", "m4a", "aac", 
-    "mka", "wav", "wma"
-  ];
+// function filterInMusicFiles(allFiles: string[]){
+//   const suportedFiles = [
+//     "mp3", "mp4", "flac", 
+//     "ogg", "mkv", "m4a", "aac", 
+//     "mka", "wav", "wma"
+//   ];
 
-  return filter((file) => 
-    !!includes( 
-      last(split(".", file)), 
-      suportedFiles
-    ), 
-    allFiles
-  )
-}
+//   return filter((file) => 
+//     !!includes( 
+//       last(split(".", file)), 
+//       suportedFiles
+//     ), 
+//     allFiles
+//   )
+// }
 
 function capitalizeRawStrings(word : string){
   return word.trim().toLowerCase().split(' ').map(
@@ -124,10 +124,42 @@ function excludeArrayExtensionName(filename: string[]){
   return init(filename)
 }
 
-async function generateMetasByDir(dirPath: string){
-  const dirFiles = await readdir(dirPath);
-  const filesMusic = filterInMusicFiles(dirFiles);
-  const currentFolder = last(split("\\", dirPath));
+const hasFileSupport = (path: string ) => includes( 
+  last(split(".", path)), 
+  [
+    "mp3", "mp4", "flac", 
+    "ogg", "mkv", "m4a", "aac", 
+    "mka", "wav", "wma"
+  ]
+)
+
+const getSubFilesAndCheckSupportPaths = async (paths: string[]) => {
+  let pathsFiltered : string[] = []
+
+  for(const path of paths){
+    const isFolder = await stat(path)
+  
+    if(isFolder.isDirectory()){
+      const subPaths = await readdir(path);
+      pathsFiltered = [
+        ...pathsFiltered, 
+        ...filter(hasFileSupport, subPaths)
+      ];
+      break;
+    }
+
+    if(hasFileSupport(path)){
+      pathsFiltered = [...pathsFiltered, path]
+    }
+  }
+
+  return pathsFiltered
+}
+
+async function generateMetasByDir(paths: string[]){
+  console.log("PASSO 1.5", paths);
+  
+  const filesPath = await getSubFilesAndCheckSupportPaths(paths);
 
   return map( file => {
     const extensionSeparator = split(".", last(split("\\", file)) || '');
@@ -149,7 +181,7 @@ async function generateMetasByDir(dirPath: string){
     }
 
     return null
-  }, filesMusic )
+  }, filesPath )
 }
 
 export { generateMetasByDir };
