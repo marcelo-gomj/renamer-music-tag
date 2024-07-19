@@ -1,7 +1,11 @@
-import { includes, init, filter, join, last, map, reduce, split, tail, slice, nth, juxt } from "ramda";
 import * as R from "ramda";
 import { readdir, stat } from "fs/promises";
-import {  ObjectTransformer, MetaObjectResult, MetasAsMethod, MetaResult } from "../types/metas-type";
+import {  
+  ObjectTransformer, 
+  MetaObjectResult, 
+  MetasAsMethod, 
+  ReturnMetas 
+} from "../types/metas-type";
 
 const matchFeatArtist = R.match(/(?<=(feat|ft|part)\..?)(\w+(\s|_|-|.))+/ig);
 const matchInfoStrings = R.match(/(?:\d*.?(?:[a-zà-ú&]+)+.?\d*)+/ig);
@@ -22,7 +26,6 @@ const matchArtist = (pattern: string, metas?: MetaObjectResult, index?: number) 
 
   return [] as string[]
 }
-
 
 const generateMetas = R.curry((
   obj: ObjectTransformer, 
@@ -80,35 +83,18 @@ const metaObjectFunction : ObjectTransformer = {
   feat: matchFeatArtist
 }
 
-
 const generateMetasByMethods = generateMetas(metaObjectFunction);
-
-// function filterInMusicFiles(allFiles: string[]){
-//   const suportedFiles = [
-//     "mp3", "mp4", "flac", 
-//     "ogg", "mkv", "m4a", "aac", 
-//     "mka", "wav", "wma"
-//   ];
-
-//   return filter((file) => 
-//     !!includes( 
-//       last(split(".", file)), 
-//       suportedFiles
-//     ), 
-//     allFiles
-//   )
-// }
 
 function capitalizeRawStrings(word : string){
   return word.trim().toLowerCase().split(' ').map(
-    w => w[0] ? w[0].toUpperCase() + tail(w) : ""
+    w => w[0] ? w[0].toUpperCase() + R.tail(w) : ""
   ).join(' ')
 }
 
 function splitPatternsName(filename: string){
   const musicNamePatterns = filename.split(/(-|(?:part|ft|feat)\.|\(|\)|^\d+(?:\.\d+)?)/ig)
 
-  return reduce((patterns: string[], word: string) => {
+  return R.reduce((patterns: string[], word: string) => {
     const wordTrimmed = capitalizeRawStrings(word);
 
     return wordTrimmed ? [...patterns, wordTrimmed] : patterns
@@ -117,15 +103,15 @@ function splitPatternsName(filename: string){
 
 function excludeArrayExtensionName(filename: string[]){
   // check duplicate extension name
-  if(nth(-1, filename) === nth(-2, filename)){
-    return slice(0, -2, filename)
+  if(R.nth(-1, filename) === R.nth(-2, filename)){
+    return R.slice(0, -2, filename)
   }
 
-  return init(filename)
+  return R.init(filename)
 }
 
-const hasFileSupport = (path: string ) => includes( 
-  last(split(".", path)), 
+const hasFileSupport = (path: string ) => R.includes( 
+  R.last(R.split(".", path)), 
   [
     "mp3", "mp4", "flac", 
     "ogg", "mkv", "m4a", "aac", 
@@ -135,53 +121,77 @@ const hasFileSupport = (path: string ) => includes(
 
 const getSubFilesAndCheckSupportPaths = async (paths: string[]) => {
   let pathsFiltered : string[] = []
+  let pathErrors : string[] = [];
 
   for(const path of paths){
-    const isFolder = await stat(path)
-  
-    if(isFolder.isDirectory()){
-      const subPaths = await readdir(path);
-      pathsFiltered = [
-        ...pathsFiltered, 
-        ...filter(hasFileSupport, subPaths)
-      ];
-      break;
+    try{
+      const isFolder = await stat(path)
+    
+      if(isFolder.isDirectory()){
+        const subPaths = await readdir(path);
+        pathsFiltered = [
+          ...pathsFiltered, 
+          ...R.filter(hasFileSupport, subPaths)
+        ];
+        break;
+      }
+    }catch (_){
+      pathErrors = [...pathErrors, path]
     }
+    
 
     if(hasFileSupport(path)){
       pathsFiltered = [...pathsFiltered, path]
     }
   }
 
-  return pathsFiltered
+  return { pathsFiltered, pathErrors }
 }
 
-async function generateMetasByDir(paths: string[]){
-  console.log("PASSO 1.5", paths);
-  
-  const filesPath = await getSubFilesAndCheckSupportPaths(paths);
+const checkListPaths = (list: string[]) => R.length(list) === 0;
 
-  return map( file => {
-    const extensionSeparator = split(".", last(split("\\", file)) || '');
-    const [ filenameInitial, extension ] = juxt([ 
+const generateMetasByDir = async (paths: string[]) : ReturnMetas => {
+  if(checkListPaths(paths)) return ({ error: { name: 'no-sources' }});
+
+  const { 
+    pathErrors,
+    pathsFiltered 
+  } = await getSubFilesAndCheckSupportPaths(paths);
+
+
+  if(checkListPaths(pathsFiltered)) return ({ error: { name: 'no-sources' }});
+
+  const results = R.map( file => {
+    const extensionSeparator = R.split(".", R.last(R.split("\\", file)) || '');
+
+    const [ filenameInitial, extension ] = R.juxt([ 
       excludeArrayExtensionName, 
-      list => last(list)
+      list => R.last(list)
     ])(extensionSeparator);
     
-    const rawFilename = join(".", filenameInitial);
+    const rawFilename = R.join(".", filenameInitial);
    
     if(rawFilename){
       return {
         ...generateMetasByMethods(
-        splitPatternsName(rawFilename), 
-        extension
-      ),
-      path: file
+          splitPatternsName(rawFilename), 
+          extension
+        ),
+        path: file
       }
     }
 
     return null
-  }, filesPath )
+  }, pathsFiltered )
+
+  return { 
+    results, 
+    ...( 
+      R.length(pathErrors) ? 
+      { error : { name: "source-error", pathErrors }} 
+      : {}
+    ) 
+  }
 }
 
 export { generateMetasByDir };

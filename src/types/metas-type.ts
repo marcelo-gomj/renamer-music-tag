@@ -23,7 +23,20 @@ type MetaResult = {
   path: string
 }
 
+type ReturnMetas = Promise<{
+  results ?: MetaResult[],
+  error ?: { 
+    name : 'no-sources' | 'source-error',
+    pathErrors ?: string[]
+  }
+}>
 
 
 
-export { ObjectTransformer, MetaObjectResult, MetasAsMethod, MetaResult }
+export { 
+  ObjectTransformer, 
+  MetaObjectResult, 
+  MetasAsMethod, 
+  MetaResult, 
+  ReturnMetas 
+}
