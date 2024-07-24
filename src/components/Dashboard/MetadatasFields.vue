@@ -32,7 +32,9 @@
         </div>
       </div>
     </div>
-
+    
+    <div class="pt-3 text-x1 font-medium opacity-40">Mostrar mais metadatas</div>
+    
     <MetadatasControllers />
   </div>
 </template>
