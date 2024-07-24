@@ -1,11 +1,11 @@
 <template>
-  <div :class="`flex relative group select-none flex-col ${metas ? 'w-[55%]' : 'w-full'} overflow-hidden h-full`">
+  <div :class="`flex relative group select-none flex-col ${metas ? 'w-[55%]' : 'w-full'} overflow-y-hidden h-full`">
     <ToolsMenu />
 
-    <div class="h-full">
+    <div class="flex flex-col h-full overflow-y-hidden">
       <div
         v-if="hasSourceDir" 
-        class="flex justify-between cursor-pointer items-center font-medium text-x1 tracking-wider pb-1.5"
+        class="flex justify-between cursor-pointer items-center font-medium text-x1 tracking-wider pb-2"
         @click="toggleFilesMusicList"
       >
         <div>Arquivos referenciados</div>
@@ -16,7 +16,7 @@
   
       </div>
 
-      <div class="h-full">
+      <div class="flex flex-col h-full overflow-y-hidden">
         <div
           v-if="hasSourceDir" 
           class="relative h-full overflow-y-hidden"
@@ -24,14 +24,12 @@
           <div :class="`z-50 h-full overflow-y-scroll hide-scrollbar ${openListMusics ? 'invisible' : ''}`">
             <div class="relative">
               <div v-for="meta of metas"
-                class="text-base-white-700 line-clamp-1 pl-6 mr-2 p-4 rounded-sm z-[999] hover:text-base-white-200 text-x1 py-1 my-0.5 font-medium cursor-pointer hover:bg-base-dark-400">
+                class="text-base-white-700 line-clamp-1 pl-6 mr-2 p-4 rounded-sm z-[999] hover:text-base-white-200 text-x1 py-1 font-medium cursor-pointer hover:bg-base-dark-400">
                 {{ meta.path }}
               </div>
               <div :class="`absolute w-0.5 rounded-full left-1.5 top-0 h-full bg-base-dark-400 ${openListMusics ? 'invisible' : ''}`" />
             </div>
           </div>
-    
-    
         </div>
 
         <div v-else
