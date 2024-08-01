@@ -16,8 +16,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
-import { ChevronDown, ChevronLeft } from "lucide-vue-next";
 const { failedList, successfulList } = defineProps<{
   successfulList : string[],
   failedList : string[]
