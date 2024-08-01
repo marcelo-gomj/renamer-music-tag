@@ -1,3 +1,5 @@
+import NodeId3 from "node-id3";
+
 type MetasAsMethod = 
   "track" | 
   "title" | 
@@ -6,6 +8,7 @@ type MetasAsMethod =
   "artist" | 
   "disc" | 
   "album" ;
+
 
 type MetaKeys <T> =  { [key in MetasAsMethod] : T }
 type MetaValue = { value: string, patternIndex ?: number};
@@ -31,12 +34,11 @@ type ReturnMetas = Promise<{
   }
 }>
 
-
-
 export { 
   ObjectTransformer, 
   MetaObjectResult, 
   MetasAsMethod, 
   MetaResult, 
-  ReturnMetas 
+  ReturnMetas ,
+  MetaKeys
 }
