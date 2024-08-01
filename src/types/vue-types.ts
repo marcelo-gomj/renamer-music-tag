@@ -1,7 +1,12 @@
+import { MetaResult } from "./metas-type"
 
 export type SourceSelectProps = {
   currentDir: string,
-  addSourceDir : (sourcePath: string[]) => void
+  addSourceDir : (sourcePath: string[]) => void,
+  updateMetaResults : (paths ?: string[]) => { 
+    error: { name: string, pathErrors: string[]}, 
+    result: MetaResult[]
+  } 
 }
 
 export type RoutePath = (path: 'home' | 'dashboard' | 'config') => void

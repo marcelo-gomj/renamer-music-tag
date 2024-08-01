@@ -1,5 +1,5 @@
 <template>
-  <div v-if="metas" class="flex flex-col w-[45%] overflow-y-hidden h-full">
+  <div v-if="metas?.length" class="flex flex-col w-[45%] overflow-y-hidden h-full">
     <div class="flex font-medium justify-between text-x1 mt-2.5 my-4">
       <div class="flex items-center gap-3">
         <div class="tracking-wider">Metadatas</div>
@@ -12,7 +12,7 @@
 
     <div>
       <div v-for="data of tags(metas[0].metadatas)"
-        class="flex group relative text-x1 items-center gap-4 pl-6 pr-2 py-1.5 my-1 rounded-md hover:bg-base-dark-400 cursor-pointer">
+        class="flex group relative text-x1 items-center gap-4 pl-6 pr-2  my-1 rounded-md hover:bg-base-dark-400 cursor-pointer">
 
         <div :class="`absolute left-1 w-1 rounded-full h-4 ${data.status === 'GENERATED' ? 'bg-green-400' :
           data.status === 'EDITED' ? 'bg-base-white-400' : '' } shrink-0`" />
@@ -22,7 +22,10 @@
         </div>
 
         <div class="flex justify-between items-center w-full">
-          <div class="font-medium w-full">{{ data.value }}</div>
+          <input 
+            class="font-medium w-full h-8 bg-[rgb(0,0,0,0)] border-none outline-none"
+            :value="data.value"
+          >
 
           <div class="h-full text-base-white-700 group-hover:text-white">
             <component class="w-[0.85rem] h-[0.85rem]" v-if="data.status === 'GENERATED'" :is="WandSparkles" />
@@ -33,7 +36,10 @@
       </div>
     </div>
     
-    <div class="pt-3 text-x1 font-medium opacity-40">Mostrar mais metadatas</div>
+    <div class="pt-3 text-x1 font-medium opacity-40"
+    >
+      Mostrar mais metadatas
+    </div>
     
     <MetadatasControllers />
   </div>
@@ -45,6 +51,8 @@ import { Captions, Disc, Tag,  Music2, Link2, LucideUsers, CalendarIcon, Edit, W
 import { FunctionalComponent, inject } from 'vue';
 import { MetaResult, MetaObjectResult } from 'src/types/metas-type';
 import { toPairs } from 'ramda';
+
+const { editMusicMetadatas } = window.api.nodeID3;
 
 const metas = inject<MetaResult[]>("referenceFiles");
 
