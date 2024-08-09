@@ -24,6 +24,7 @@ const { generateMetasByDir } = window.api.metas
 
 const currentDirSource = ref<string[]>([]);
 const metas = ref<MetaResult[]>([]);
+const currentReferencesMeta = ref<MetaResult[]>([])
 const route = ref('home');
 const page = ref(HomePage)
 const noticationConfig = ref<NotificationLayoutProps>({})
@@ -107,5 +108,6 @@ watch(route, watchRouteChange);
 provide("sourceDir", { currentDir: currentDirSource, addSourceDir, updateMetaResults })
 provide("referenceFiles", metas)
 provide("setRoute", setRoute);
-provide('setNotificationModal', setNotification)
+provide('setNotificationModal', setNotification);
+provide('currentReferencesMeta', currentReferencesMeta);
 </script>

@@ -1,12 +1,12 @@
 <template>
-  <div v-if="metas?.length" class="flex flex-col w-[45%] overflow-y-hidden h-full">
+  <div v-if=" metasGenerated?.length" class="flex flex-col w-[45%] overflow-y-hidden h-full">
     <div class="flex font-medium justify-between text-x1 mt-2.5 my-4">
       <div class="flex items-center gap-3">
         <div class="tracking-wider">Metadatas</div>
       </div>
 
       <div class="text-base-white-800">
-        {{ metas.length }} arquivos referentes
+        {{ metasGenerated.length }} arquivos referentes
       </div>
     </div>
 
@@ -48,13 +48,34 @@
 <script setup lang="ts">
 import MetadatasControllers from './MetadatasControllers.vue';
 import { Captions, Disc, Tag,  Music2, Link2, LucideUsers, CalendarIcon, Edit, WandSparkles } from 'lucide-vue-next';
-import { FunctionalComponent, inject } from 'vue';
+import { FunctionalComponent, inject, unref, watch } from 'vue';
 import { MetaResult, MetaObjectResult } from 'src/types/metas-type';
-import { toPairs } from 'ramda';
+import { map, toPairs } from 'ramda';
+import { ref } from 'vue';
+import NodeID3 from 'node-id3';
+import { MetadataInputField } from 'src/types/vue-types';
 
-const { editMusicMetadatas } = window.api.nodeID3;
+const { editMusicMetadatas, readMusicMetadatas  } = window.api.nodeID3;
 
-const metas = inject<MetaResult[]>("referenceFiles");
+const metasGenerated = inject<MetaResult[]>("referenceFiles");
+const selectedReferenceMeta = inject<MetaResult[]>('selectedReferences')
+const originalMetadatas = ref<NodeID3.Tags[]>([]);
+const currentMetadatas = ref<{ [path: string] : NodeID3.Tags }>({})
+const isOpenAllMetadatas = ref(false);
+
+const pathMetadataIndex = (metadatas: MetaResult[]) => {
+  return currentMetadatas.value = unref(metadatas).reduce(
+    (metadatasAcc, meta) => ({...metadatasAcc, [meta.path] : meta.metadatas}),
+    {}
+  )
+}
+
+const checkMetasGenarete = () => {
+  currentMetadatas.value = pathMetadataIndex(metasGenerated);
+}
+
+watch(metasGenerated, checkMetasGenarete);
+// watch(isOpenAllMetadatas, getCurrentFileMetadatas)
 
 type TagProps = {
   tag: string,
@@ -64,12 +85,12 @@ type TagProps = {
 }[];
 
 const iconsByMetadatas = (tag : string) => ({
-  "track" : Music2 ,
+  "numberTrack" : Music2 ,
   "title" : Captions ,
   "album" : Disc ,
   "feat" : Link2 ,
   "artist" : LucideUsers,
-  "disc" : Disc,
+  "partOfSet" : Disc,
   "year":  CalendarIcon,
   "default" : Tag
 }[tag || "default"]);
@@ -83,5 +104,6 @@ const tags = (metadatas: MetaObjectResult) : TagProps =>
       value: meta.value
   })
 )
+
 
 </script>
