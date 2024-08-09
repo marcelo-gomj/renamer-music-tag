@@ -1,19 +1,17 @@
-import NodeId3 from "node-id3";
-
 type MetasAsMethod = 
-  "track" | 
+  "trackNumber" | 
   "title" | 
   "year" | 
   "feat" | 
   "artist" | 
-  "disc" | 
+  "partOfSet" | 
   "album" ;
 
 
-type MetaKeys <T> =  { [key in MetasAsMethod] : T }
-type MetaValue = { value: string, patternIndex ?: number};
+type MetaKeys <T> =  { [key in MetasAsMethod] : T  }
+type MetaValue = { value: string, patternIndex ?: number} | null;
 type ObjectTransformer = MetaKeys<TransformMetaFunction>
-type MetaObjectResult = Partial<MetaKeys<MetaValue>> 
+type MetaObjectResult = Partial<MetaKeys<MetaValue | null>> 
 type TransformMetaFunction = (
   pattern: string,
   metaAccumulate ?: MetaObjectResult,
