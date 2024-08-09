@@ -13,19 +13,41 @@ const matchDisc = R.match(/(?<=(disc|cd|vol)\.?.)(\d+)/ig);
 const matchYearTrack = R.match(/\d{4}/ig);
 const matchTrackNumber = R.match(/(?:(\d+)(\.\d+)?)/ig);
 
-const matchArtist = (pattern: string, metas?: MetaObjectResult, index?: number) => {
-  const albumReplace = matchInfoStrings(pattern);
-  
-  if (albumReplace.length && metas) {
+type ReturnWrapField = (MetaObjectResult | string[]);
+type MatchFnFunction = (str: string) => RegExpMatchArray; 
+type ReturnFnObject = (match: RegExpMatchArray, metas: MetaObjectResult, index: number) => ReturnWrapField;
+
+const matchWrapField = ( matchFn: MatchFnFunction, fnCallback:  ReturnFnObject ) => {
+  return (pattern: string, metas?: MetaObjectResult, index?: number) : ReturnWrapField => {
+    const match = matchFn(pattern);
+    if(match.length && metas){
+      return fnCallback(match, metas, index)
+    }
+
+    return [] as string[]
+  }
+}
+
+type WrapFunctionType = ReturnType<typeof matchWrapField>;
+
+const matchArtist : WrapFunctionType = matchWrapField( 
+  matchInfoStrings, 
+  (match, metas, index) => { 
     return {
       artist: metas.title,
       title: metas.album,
-      album: { value : albumReplace[0], patternIndex : index }
+      album: { value : match[0], patternIndex : index }
     }
-  }
+})
 
-  return [] as string[]
-}
+const addFeatArtist : WrapFunctionType = matchWrapField(
+  matchFeatArtist, (match, metas)  => {
+  
+  return {
+    artist: { ...metas.artist, value : `${metas.artist.value}/${match[0]}` },
+    feat : null
+  }
+})
 
 const generateMetas = R.curry((
   obj: ObjectTransformer, 
@@ -74,13 +96,13 @@ const generateMetas = R.curry((
 })
 
 const metaObjectFunction : ObjectTransformer = {
-  disc: matchDisc,
-  track: matchTrackNumber,
+  partOfSet: matchDisc,
+  trackNumber: matchTrackNumber,
   title: matchInfoStrings,
   album: matchInfoStrings,
   artist: matchArtist,
   year: matchYearTrack,
-  feat: matchFeatArtist
+  feat: addFeatArtist
 }
 
 const generateMetasByMethods = generateMetas(metaObjectFunction);
@@ -92,8 +114,10 @@ function capitalizeRawStrings(word : string){
 }
 
 function splitPatternsName(filename: string){
-  const musicNamePatterns = filename.split(/(-|(?:part|ft|feat)\.|\(|\)|^\d+(?:\.\d+)?)/ig)
-
+    // const musicNamePatterns = filename.split(/(-|(?:part|ft|feat)\.|\(|\)|^\d+(?:\.\d+)?)/ig)
+    const musicNamePatterns = filename.split(
+      /(-|(?:(?:part|ft|feat)\.?.?\w*\s?\w*)|\(|\)|^\d+(?:\.\d+))/ig
+    )
   return R.reduce((patterns: string[], word: string) => {
     const wordTrimmed = capitalizeRawStrings(word);
 
