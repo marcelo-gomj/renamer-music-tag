@@ -3,12 +3,12 @@
 import { contextBridge } from "electron";
 import { generateMetasByDir } from "./preload/meta-generator";
 import { selectMusicsSources } from "./preload/select-musics-source";
-import { editMusicMetadatas } from "./preload/services/node-id3";
+import nodeID3 from "./preload/services/node-id3";
 
 export const api = {
   metas  : { generateMetasByDir },
   explorer : { selectMusicsSources },
-  nodeID3 : { editMusicMetadatas }
+  nodeID3
 }
 
 contextBridge.exposeInMainWorld("api", api);
