@@ -1,5 +1,6 @@
 import { FunctionalComponent } from "vue"
 import { MetaResult } from "./metas-type"
+import { Tags } from "./tags"
 
 export type SourceSelectProps = {
   currentDir: string,
@@ -22,10 +23,9 @@ export type NotificationLayoutProps = {
 
 export type ProvideNotification = (options : NotificationLayoutProps) => void;
 
-export type MetadataInputField = {
-  tag: string, 
-  path: string,
+export type InputDataProps = {
+  tag: keyof Tags, 
   status: "EDITED" | "GENERATED" | "DEFAULT",
-  value: string | null, 
+  value: string, 
   icon : FunctionalComponent<any>
-}
+}[]
