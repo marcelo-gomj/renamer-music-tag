@@ -35,15 +35,15 @@ const editMusicMetadatas = async ({
 }
 
 const readMusicMetadatas = async ( filePaths: string[] ) => {
-  let fileSourceMetadatas : { metadata : NodeID3.Tags , path: string }[] = [];
+  let fileSourceMetadatas : { metadatas : NodeID3.Tags , path: string }[] = [];
   let pathErrors : string[] = [];
 
   for(const path of filePaths){
     try{
       const fileBuffer = await readFile(path);
-      const metadata = await NodeID3.Promise.read(fileBuffer);
+      const metadatas = await NodeID3.Promise.read(fileBuffer);
       
-      fileSourceMetadatas = [...fileSourceMetadatas, { metadata, path }];
+      fileSourceMetadatas = [...fileSourceMetadatas, { metadatas, path }];
     }catch(_){
       pathErrors = [...pathErrors, path];
     }

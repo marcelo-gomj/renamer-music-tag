@@ -155,7 +155,7 @@ const getSubFilesAndCheckSupportPaths = async (paths: string[]) => {
         const subPaths = await readdir(path);
         pathsFiltered = [
           ...pathsFiltered, 
-          ...R.filter(hasFileSupport, subPaths)
+          ...R.filter(hasFileSupport, R.map(subfile => path + '\\' + subfile, subPaths))
         ];
         break;
       }
