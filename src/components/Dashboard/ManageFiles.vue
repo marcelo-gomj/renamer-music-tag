@@ -24,8 +24,10 @@
           <div :class="`z-50 h-full overflow-y-scroll hide-scrollbar ${openListMusics ? 'invisible' : ''}`">
             <div class="relative">
               <div v-for="meta of metas"
-                class="text-base-white-700 line-clamp-1 pl-6 mr-2 p-4 rounded-sm z-[999] hover:text-base-white-200 text-x1 py-1 font-medium cursor-pointer hover:bg-base-dark-400">
-                {{ meta.path }}
+                class="text-base-white-700 line-clamp-1 pl-6 mr-2 p-4 rounded-sm z-[999] hover:text-base-white-200 text-x1 py-1 font-medium cursor-pointer hover:bg-base-dark-400"
+                  @click="() => handleSelectFile(meta.path)"
+                >
+                {{ R.last(R.split('\\', meta.path)) }}
               </div>
               <div :class="`absolute w-0.5 rounded-full left-1.5 top-0 h-full bg-base-dark-400 ${openListMusics ? 'invisible' : ''}`" />
             </div>
@@ -55,15 +57,18 @@
 </template>
 
 <script setup lang="ts">
-import { inject, ref } from "vue";
+import { inject, Ref, ref } from "vue";
 import ToolsMenu from "../Dashboard/ToolsMenu.vue";
 import { ChevronDown, FolderSearch } from 'lucide-vue-next';
 import { MetaResult } from "src/types/metas-type";
 import { SourceSelectProps } from "src/types/vue-types";
 const filePath = "D:/Músicas/Red Hot Chilly Peppers - 2001 Century";
+import * as R from "ramda";
 
-let openListMusics = ref(false);
+const openListMusics = ref(false);
 const { addSourceDir, currentDir } = inject<SourceSelectProps>("sourceDir");
+const currentReferencesMeta = inject<Ref<string[]>>("currentReferencesMeta");
+const test = inject<(list : string[]) => void>("test");
 
 async function selectFolderSource(){
   const paths = await window.api.explorer.selectMusicsSources(["openDirectory"]);
@@ -75,5 +80,9 @@ const metas = inject<MetaResult[]>('referenceFiles');
 
 function toggleFilesMusicList() {
   openListMusics.value = !openListMusics.value;
+}
+
+function handleSelectFile(path: string){
+    currentReferencesMeta.value = [path];
 }
 </script>
