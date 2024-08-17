@@ -24,7 +24,7 @@ const { generateMetasByDir } = window.api.metas
 
 const currentDirSource = ref<string[]>([]);
 const metas = ref<MetaResult[]>([]);
-const currentReferencesMeta = ref<MetaResult[]>([])
+const currentReferencesMeta = ref<string[]>([])
 const route = ref('home');
 const page = ref(HomePage)
 const noticationConfig = ref<NotificationLayoutProps>({})
