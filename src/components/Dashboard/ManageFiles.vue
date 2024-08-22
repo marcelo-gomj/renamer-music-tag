@@ -24,10 +24,25 @@
           <div :class="`z-50 h-full overflow-y-scroll hide-scrollbar ${openListMusics ? 'invisible' : ''}`">
             <div class="relative">
               <div v-for="meta of metas"
-                class="text-base-white-700 line-clamp-1 pl-6 mr-2 p-4 rounded-sm z-[999] hover:text-base-white-200 text-x1 py-1 font-medium cursor-pointer hover:bg-base-dark-400"
-                  @click="() => handleSelectFile(meta.path)"
+                :class="`flex items-center gap-3 text-base-white-700 line-clamp-1 pl-2 pr-2 rounded-sm z-[999] hover:text-base-white-200 text-x1 font-medium cursor-pointer hover:bg-base-dark-400 ${ 
+                R.includes(meta.path, currentReferencesMeta) ? 'text-base-white-300' : ''}`"
+              >
+                <div
+                  @click="_ => handleSelectFile(meta.path)"
+                  class="px-2 h-full"
                 >
-                {{ R.last(R.split('\\', meta.path)) }}
+                  <component 
+                    :is="R.includes(meta.path, currentReferencesMeta) ? CircleCheck : Circle" 
+                    class="size-[1.15rem] shrink-0"
+                  />
+                </div>
+                
+                <div 
+                  @click="_ => handleUniqueSelect(meta.path)"
+                  class="py-1 line-clamp-1 w-full"
+                >
+                  {{ R.last(R.split('\\', meta.path)) }}
+                </div>
               </div>
               <div :class="`absolute w-0.5 rounded-full left-1.5 top-0 h-full bg-base-dark-400 ${openListMusics ? 'invisible' : ''}`" />
             </div>
@@ -59,7 +74,7 @@
 <script setup lang="ts">
 import { inject, Ref, ref } from "vue";
 import ToolsMenu from "../Dashboard/ToolsMenu.vue";
-import { ChevronDown, FolderSearch } from 'lucide-vue-next';
+import { ChevronDown, FolderSearch, CircleCheck, Circle } from 'lucide-vue-next';
 import { MetaResult } from "src/types/metas-type";
 import { SourceSelectProps } from "src/types/vue-types";
 const filePath = "D:/Músicas/Red Hot Chilly Peppers - 2001 Century";
@@ -68,7 +83,6 @@ import * as R from "ramda";
 const openListMusics = ref(false);
 const { addSourceDir, currentDir } = inject<SourceSelectProps>("sourceDir");
 const currentReferencesMeta = inject<Ref<string[]>>("currentReferencesMeta");
-const test = inject<(list : string[]) => void>("test");
 
 async function selectFolderSource(){
   const paths = await window.api.explorer.selectMusicsSources(["openDirectory"]);
@@ -83,6 +97,14 @@ function toggleFilesMusicList() {
 }
 
 function handleSelectFile(path: string){
-    currentReferencesMeta.value = [path];
+  currentReferencesMeta.value = R.ifElse(
+    R.includes(path),
+    R.without([path]),
+    R.append(path)
+  )(currentReferencesMeta.value)
+}
+
+function handleUniqueSelect(path : string){
+  currentReferencesMeta.value = [path]
 }
 </script>
