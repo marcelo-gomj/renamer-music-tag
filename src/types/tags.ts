@@ -9,7 +9,7 @@ export type Tags  = {
   artist?: string,
   partOfSet?: string,
   publisher?: string,
-  feat ?: string,
+  // feat ?: string,
   trackNumber?: string,
   year?: string,
 //   comment?: {

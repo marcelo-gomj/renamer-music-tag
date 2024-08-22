@@ -1,4 +1,5 @@
 import { Tags } from "./tags";
+import { FieldValue } from "./vue-types";
 
 
 type MetasAsMethod = keyof Tags;
@@ -26,7 +27,7 @@ type ReturnMetas = Promise<{
   }
 }>
 
-type CurrentMetaSave = { [path: string] : {[ metakey in keyof Tags ] : MetaValue }} 
+type CurrentMetaSave = { [path: string] : {[ metakey in keyof Tags ] : FieldValue }} 
 
 export { 
   ObjectTransformer, 
