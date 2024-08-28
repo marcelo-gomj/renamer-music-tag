@@ -9,8 +9,9 @@
           :key="meta[0].path" 
           :class="`flex tracking-wide items-center select-none group gap-4 ${type(pattern) === 'Array'  ? 'pl-5 pr-6 rounded-full cursor-pointer text-x1 bg-base-dark-400 hover:bg-base-dark-600 shadow-[2px_2px_20px] shadow-base-dark-200' : 'px-1.5 text-x2 font-bold text-base-white-800'}`">
 
-          <component :is="type(pattern) === 'Array'  ? Icon[pattern[0]] : null" class="w-[1rem] h-[1rem]" />
-          <div class="leading-[1]">{{ type(pattern) === "Array" ? pattern[0] : pattern }}</div>
+          <component :is="type(pattern) === 'Array'  ? Icon[pattern[0]].icon : null" class="w-[1rem] h-[1rem]" />
+
+          <div class="leading-[1]">{{ type(pattern) === "Array" ? (Icon[pattern[0]].label || pattern[0]): pattern }}</div>
         </div>
 
         <div v-else class="flex justify-between rounded-lg h-full flex-col w-full ">
@@ -24,33 +25,33 @@
 <script setup lang="ts">
 import { Music2, Captions, Disc, CalendarIcon, Link2, Tag, LucideUsers } from 'lucide-vue-next';
 import { MetaResult } from 'src/types/metas-type';
-import { inject } from 'vue';
+import { inject, Ref } from 'vue';
 import { toPairs, update, type} from "ramda";
+import { Tags } from 'src/types/tags';
 
-const meta = inject<MetaResult[]>("referenceFiles");
+const meta = inject<Ref<MetaResult[]>>("referenceFiles");
 
 function patternsTagged() : (string | [string])[] {
-  if(!meta) return [];
+  if(!meta.value.length) return [];
 
-  if(meta.length){
-    return toPairs(meta[0].metadatas)
+  if(meta.value.length){
+    return toPairs(meta.value[0].metadatas)
     .reduce((patterns, [tag, { patternIndex }] ) => {
       return update<string | [string]>(patternIndex, [tag], patterns);
-    }, meta[0].patterns )
+    }, meta.value[0].patterns )
   }
 
   return []
 
 }
 
-const Icon : Record<string, any> = {
-  "track" : Music2 ,
-  "title" : Captions ,
-  "album" : Disc ,
-  "feat" : Link2 ,
-  "artist" : LucideUsers,
-  "disc" : Disc,
-  "year":  CalendarIcon,
-  "default" : Tag
+const Icon : Record<keyof Tags & 'default', any> = {
+  "trackNumber" : { label: "Faixa", icon: Music2 } ,
+  "title" : { label: "Título", icon: Captions } ,
+  "album" : { label: "Albúm", icon: Disc } ,
+  "artist" : { label: "Artista", icon: LucideUsers },
+  "partOfSet" : { label: "Disco de ", icon: Disc },
+  "year":  { label: 'Ano', icon: CalendarIcon },
+  "default" : { label: "", icon: Tag }
 }
 </script>
