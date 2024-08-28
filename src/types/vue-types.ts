@@ -27,8 +27,14 @@ export type FieldTagStatus =  "EDITED" | "GENERATED" | "DEFAULT";
 
 export type FieldValue ={
   tagValue: string, 
-  status : FieldTagStatus
+  status : FieldTagStatus[]
 }
+
+export type FieldUniqueValue = {
+  tagValue: string,
+  status: FieldTagStatus
+}
+
 
 export type InputProps = {
   [tag in keyof Tags]: FieldValue
@@ -38,7 +44,7 @@ export type IndexPathTags <T> = { [path : string] : { [tag in keyof Tags]: T }};
 
 export type InputDataProps = {
   tag: keyof Tags, 
-  status: FieldTagStatus | FieldTagStatus[],
+  status: FieldTagStatus[],
   value: string, 
   icon : FunctionalComponent<any>
 }[]

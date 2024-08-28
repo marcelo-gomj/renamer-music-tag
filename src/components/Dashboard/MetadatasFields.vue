@@ -1,23 +1,22 @@
 <template>
-  <div v-if="metasGenerated?.length" class="flex flex-col w-[45%] overflow-y-hidden h-full">
+  <div v-if="metasGenerated?.length" class="flex flex-col w-[50%] overflow-y-hidden h-full">
     <div class="flex font-medium justify-between text-x1 mt-2.5 my-4">
       <div class="flex items-center gap-3">
         <div class="tracking-wider">Metadatas</div>
       </div>
 
       <div class="text-base-white-800">
-        {{ selectedReferenceMeta.length }} dos arquivos referentes
+        {{ selectedReferenceMeta.length || metasGenerated.length }} dos arquivos referentes
       </div>
     </div>
 
-    <div class="">
+    <div class="overflow-y-scroll">
       <div v-for="inputProps of createInputField(inputValues)"
+        :key="inputProps.tag"
         class="group relative text-x1  pl-6 pr-2 my-1 rounded-md hover:bg-base-dark-400 cursor-pointer">
         <div class="flex items-center gap-4" v-if="isOpenAllMetadatas || inputProps.value !== ''">
 
-          <div :class="`absolute left-1 w-1 rounded-full h-4 ${
-            inputProps.status === 'GENERATED' ? 'bg-green-400' :
-            inputProps.status === 'EDITED' ? 'bg-base-white-400' : ''} shrink-0`" 
+          <div :class="`absolute left-1 w-1 rounded-full h-4 ${chooseColorFieldStatusInput(inputProps.status)} shrink-0`" 
           />
 
           <div class="flex gap-5 items-center w-40">
@@ -28,11 +27,17 @@
           <div class="flex justify-between items-center w-full">
             <input class="font-medium w-full h-8 bg-[rgb(0,0,0,0)] border-none outline-none"
               :placeholder="inputProps.value === undefined ? 'Variados' : inputProps.value"
-              v-model.lazy.trim="getInputPropsComputed(inputProps.tag).value">
+              v-model.lazy.trim="getInputPropsComputed(inputProps.tag).value"
+            >
 
-            <div class="h-full text-base-white-700 group-hover:text-white">
-              <component class="w-[0.85rem] h-[0.85rem]" v-if="inputProps.status === 'GENERATED'" :is="WandSparkles" />
-              <component class="w-[0.85rem] h-[0.85rem]" v-if="inputProps.status === 'EDITED'" :is="Edit" />
+            <div
+              class="flex gap-1 mx-1 h-full"
+            >
+              <div class=" text-base-white-700 group-hover:text-white"
+                v-for="icon of mappingStatusIcon(inputProps.status)"
+              >
+                <component class="w-[0.85rem] h-[0.85rem]" :is="icon" />
+              </div>
             </div>
           </div>
 
@@ -40,8 +45,9 @@
       </div>
     </div>
 
-    <div class="pt-3 text-x1 font-medium opacity-40 hover:opacity-90 cursor-pointer" @click="handleShowUpAllMetadatas">
-      Mostrar {{ isOpenAllMetadatas ? 'menos' : 'mais' }} metadatas
+    <div class="flex gap-4 pt-3 text-x1 font-medium opacity-40 hover:opacity-90 cursor-pointer" @click="handleShowUpAllMetadatas">
+      <component :is="isOpenAllMetadatas ? ChevronUp : ChevronDown" />
+      <p>Mostrar {{ isOpenAllMetadatas ? 'menos' : 'mais' }} metadatas</p>
     </div>
 
     <MetadatasControllers />
@@ -50,12 +56,12 @@
 
 <script setup lang="ts">
 import MetadatasControllers from './MetadatasControllers.vue';
-import { Captions, Disc, Tag, Music2, Link2, LucideUsers, CalendarIcon, Edit, WandSparkles } from 'lucide-vue-next';
+import { Captions, Disc, Tag, Music2, Link2, LucideUsers, CalendarIcon, Edit, WandSparkles, ChevronDown, ChevronUp } from 'lucide-vue-next';
 import { computed, inject, Ref, watch } from 'vue';
 import { MetaResult, CurrentMetaSave } from 'src/types/metas-type';
 import * as R from "ramda";
 import { ref } from 'vue';
-import { FieldTagStatus, FieldValue, IndexPathTags, InputDataProps, InputProps } from 'src/types/vue-types';
+import { FieldTagStatus, FieldUniqueValue, FieldValue, IndexPathTags, InputDataProps, InputProps } from 'src/types/vue-types';
 import { Tags } from 'src/types/tags';
 
 const metasGenerated = inject<Ref<MetaResult[]>>("referenceFiles");
@@ -77,22 +83,8 @@ const { readMusicMetadatas } = window.api.nodeID3;
 function createDefaultTags(tagList: (keyof Tags)[]) {
   return R.zipObj(
     tagList,
-    R.repeat({ tagValue: '', status: 'DEFAULT' as FieldTagStatus }, tagList.length)
+    R.repeat({ tagValue: '', status: ['DEFAULT'] as FieldTagStatus[] }, tagList.length)
   )
-}
-
-function isPathSelected(path: string) {
-  return selectedReferenceMeta.value.length && !R.includes(path, selectedReferenceMeta.value);
-}
-
-
-function setDefaultFieldInput(
-  { tagValue, tag }: { tag: keyof Tags, tagValue: string },
-  allFields = false
-) {
-  if (allFields || inputValues.value[tag].tagValue === '') {
-    inputValues.value = R.assocPath([tag], { tagValue, status: 'DEFAULT' }, inputValues.value);
-  }
 }
 
 async function getAllOriginalMetadatas(allFields = false) {
@@ -104,13 +96,12 @@ async function getAllOriginalMetadatas(allFields = false) {
     )
 
     for (const { metadatas, path } of fileSourceMetadatas) {
-
-      const metadatasAcc = sourceMetadatas.value?.[path] || null;
-
       for (const tag of tagList) {
         const tagValue = metadatas[tag];
 
-        setDefaultFieldInput({ tagValue, tag })
+        if(!currentMetadatas.value[path]?.[tag]){
+          createDefaultInputFields( path, { tagValue, tag, status : 'DEFAULT' })
+        }
 
         sourceMetadatas.value = R.assocPath([path, tag], tagValue, sourceMetadatas.value);
 
@@ -121,38 +112,57 @@ async function getAllOriginalMetadatas(allFields = false) {
   }
 
   for (const path in sourceMetadatas.value) {
-    if (!isPathSelected(path)) return;
-
     tagList.forEach((tag) => {
       if (sourceMetadatas.value[path]?.[tag]) {
-        setDefaultFieldInput({
+        if(!currentMetadatas.value[path]?.[tag]){
+
+        createDefaultInputFields(path, {
           tagValue: sourceMetadatas.value[path][tag],
-          tag
-        }, allFields)
+          tag, 
+          status: 'DEFAULT'
+        })
       }
-    })
+    }
+  })
 
   }
 }
 
 function createDefaultInputFields(
   path: string,
-  { tag, tagValue, status }: FieldValue & { tag: keyof Tags }
+  { tag, tagValue, status }: FieldUniqueValue & { tag: keyof Tags }
 ) {
-  if (selectedReferenceMeta.value.length && !R.includes(path, selectedReferenceMeta.value)) return;
-  const inputValue = inputValues.value[tag]?.tagValue;
+ 
+  if (
+    R.isNotEmpty(selectedReferenceMeta.value) && 
+    !R.includes(path, selectedReferenceMeta.value)
+  ) return;
 
-  if (inputValue === '') {
-    inputValues.value[tag] = { tagValue, status };
+  const { tagValue: inputValue, status : inputStatus } = inputValues.value[tag];
+
+
+  if (
+    inputValue === '' || 
+    R.length(selectedReferenceMeta.value) === 1 ||
+    status === 'EDITED' && R.isEmpty(selectedReferenceMeta.value) ||
+    status === 'EDITED' && selectedReferenceMeta.value.length === metasGenerated.value.length
+  ){
+    inputValues.value[tag] = { tagValue, status : [status] };
     return;
   }
 
-  if (inputValue && inputValue !== tagValue) {
-
+  if (inputValue && inputValue !== tagValue){
     inputValues.value[tag] = {
       tagValue: undefined,
-      status
+      status: R.includes(status, inputStatus) ? inputStatus : R.append(status, inputStatus)
     };
+  }
+
+  if(!R.includes(status, inputStatus)){
+    inputValues.value[tag] = {
+      tagValue: undefined,
+      status: R.append(status, inputStatus)
+    }
   }
 }
 
@@ -160,7 +170,7 @@ function genereteTagsInitial(metaResultGenerated: Partial<MetaResult>[]) {
   for (const { path, metadatas } of metaResultGenerated) {
     if (metadatas) {
       currentMetadatas.value[path] = R.mapObjIndexed(({ value }, tag) => {
-        const tagValues: FieldValue = {
+        const tagValues: FieldUniqueValue = {
           tagValue: value,
           status: 'GENERATED'
         }
@@ -186,6 +196,24 @@ function chooseIconByTag(tag: keyof Tags | string) {
   }[tag] || Tag);
 }
 
+function chooseColorFieldStatusInput(status: FieldTagStatus[]){
+  return R.length(status) === 1 ? {
+    "GENERATED" : 'bg-green-400',
+    "EDITED" : 'bg-base-white-400',
+    "DEFAULT" : 'bg-none',
+    }[status[0]]
+  : 'bg-yellow-400'
+}
+
+function mappingStatusIcon(status: FieldTagStatus[]){
+  return status.map( type => ({ 
+      "GENERATED": WandSparkles,
+      'EDITED' : Edit,
+      'DEFAULT' : Disc
+    })[type]
+  )
+}
+
 function createInputField(inputValues: InputProps): InputDataProps {
   return R.map(tag => {
     const input = inputValues[tag];
@@ -205,7 +233,8 @@ function watchSelectFilesChange() {
     R.forEachObjIndexed(({ status, tagValue }, tag) => {
       createDefaultInputFields(String(path), { status, tagValue, tag })
     }, metadatas)
-  }, currentMetadatas.value)
+  }, currentMetadatas.value);
+
   getAllOriginalMetadatas()
 }
 
@@ -218,11 +247,17 @@ function watchChangeInput(tag: keyof Tags) {
         R.includes(path, selectedReferenceMeta.value) ||
         R.isEmpty(selectedReferenceMeta.value)
       ) {
+        const updatedValue : FieldUniqueValue = { 
+          status: 'EDITED', tagValue: inputChanged
+        }
+
         currentMetadatas.value = R.assocPath(
-          [path, tag],
-          { tagValue: inputChanged, status: 'EDITED'},
+          [path, tag], 
+          updatedValue,
           currentMetadatas.value
         )
+
+        createDefaultInputFields(path, {...updatedValue, tag })
       }
     }
   }
@@ -237,9 +272,13 @@ function getInputPropsComputed(tag: keyof Tags) {
   })
 }
 
+function watchOriginalMetadatas(isAllMetadatas : boolean){
+  watchSelectFilesChange()
+}
+
 watch(metasGenerated, genereteTagsInitial, { once: true });
 watch(selectedReferenceMeta, watchSelectFilesChange, { deep: true });
-watch(isOpenAllMetadatas, () => { getAllOriginalMetadatas() }, { once: true });
+watch(isOpenAllMetadatas, watchOriginalMetadatas);
 
 function handleShowUpAllMetadatas() {
   isOpenAllMetadatas.value = !isOpenAllMetadatas.value
