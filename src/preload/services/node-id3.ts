@@ -11,7 +11,7 @@ const editMusicMetadatas = async ({
   const {
     album, artist, 
     partOfSet, year, 
-    feat, title, trackNumber
+    title, trackNumber
   } = R.reduce(
     (accMetadatas, [ key, meta ]) => ({ ...accMetadatas, [key] : meta.value }), 
     {} as MetaKeys<string>, 
