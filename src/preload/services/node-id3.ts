@@ -1,36 +1,28 @@
 import NodeID3 from "node-id3";
 import * as R from "ramda";
-import { MetaResult } from "src/types/metas-type";
+import { CurrentMetaSave, MetaResult } from "src/types/metas-type";
 import { MetaKeys } from "../../types/metas-type";
 import { readFile } from "fs/promises"
 
-const editMusicMetadatas = async ({ 
-  metadatas, 
-  path 
-}: MetaResult) => {
-  const {
-    album, artist, 
-    partOfSet, year, 
-    title, trackNumber
-  } = R.reduce(
-    (accMetadatas, [ key, meta ]) => ({ ...accMetadatas, [key] : meta.value }), 
-    {} as MetaKeys<string>, 
-    R.toPairs(metadatas)
-  )
+const editMusicMetadatas = async ( newMetadatas: CurrentMetaSave) => {
+  const updatedFiles = [];
+  const errorFiles = [];
 
-  try{
-    const isUpdated = await NodeID3.Promise.update({
-      title,
-      album,
-      year,
-      trackNumber,
-      artist,
-      partOfSet, 
-    }, path)
+  console.log(newMetadatas)
+  for(const path in newMetadatas){
+    const metadatas = newMetadatas[path];
+    
+    try{
+      await NodeID3.Promise.update(R.map(metadata => metadata.tagValue, metadatas), path)
+      updatedFiles.push(path)
+    }catch{
+      errorFiles.push(path)
+    }
+  }
 
-    return isUpdated ? path : null
-  }catch(_){
-    return null
+  return {
+    ...(errorFiles.length ? { errors: errorFiles } : null),
+    ...(updatedFiles.length ? { updates : updatedFiles } : null) 
   }
 }
 
