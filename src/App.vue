@@ -1,5 +1,17 @@
 <template>
-	<component :is="page" />
+	<div class="flex relative flex-col h-[100vh] w-full overflow-hidden">
+		<div class="flex justify-between shrink-0 items-center px-6 h-10 w-full bg-base-dark-200 draggable">
+			<p class="font-bold text-x2">Renamer Music Tag</p>
+
+			<div class="group/close cursor-pointer">
+				<X class="size-6 opacity-40 group-hover/close:opacity-100 stroke-[1.5]" />
+			</div>
+		</div>
+
+		<div class=" py-4 px-6 h-full overflow-hidden">
+			<component :is="page" />
+		</div>
+	</div>	
 
 	<side-notification 
 		:title="noticationConfig.title" 
@@ -19,6 +31,7 @@ import ErrorsDetailModal from './components/ErrorsDetailModal.vue';
 import { NotificationLayoutProps } from './types/vue-types';
 import { MetaResult } from './types/metas-type';
 import ConfigPage from './components/Config/ConfigPage.vue';
+import { X } from 'lucide-vue-next';
 
 const { generateMetasByDir } = window.api.metas
 
