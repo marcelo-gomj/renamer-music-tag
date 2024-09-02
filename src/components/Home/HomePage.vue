@@ -1,5 +1,5 @@
 <template>
-  <div class="flex relative justify-center items-center w-[100%] h-[100vh] overflow-y-hidden">
+  <div class="flex relative justify-center items-center w-full h-full overflow-y-hidden">
     <div class="flex flex-col w-[500px] h-full overflow-y-hidden">
 
       <div class="flex space-y-2 items-center flex-col py-8">
