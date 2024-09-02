@@ -1,74 +1,92 @@
 <template>
-  <div v-if="metasGenerated?.length" class="flex flex-col w-[50%] overflow-y-hidden h-full">
-    <div class="flex font-medium justify-between text-x1 mt-2.5 my-4">
+  <div v-if="metasGenerated?.length" class="flex gap-2 flex-col w-[50%] overflow-y-hidden h-full">
+
+    <div class="flex items-center font-medium justify-between text-x1 py-1.5">
       <div class="flex items-center gap-3">
         <div class="tracking-wider">Metadatas</div>
       </div>
 
-      <div class="text-base-white-800">
+      <div class="text-base-white-800 mr-3">
         {{ selectedReferenceMeta.length || metasGenerated.length }} dos arquivos referentes
       </div>
     </div>
 
-    <div class="overflow-y-scroll">
-      <div v-for="inputProps of createInputField(inputValues)"
-        :key="inputProps.tag"
-        class="group relative text-x1  pl-6 pr-2 my-1 rounded-md hover:bg-base-dark-400 cursor-pointer">
-        <div class="flex items-center gap-4" v-if="isOpenAllMetadatas || inputProps.value !== ''">
+    <div class="border-[1.5px] border-base-dark-300 rounded-lg px-1 py-2 overflow-hidden">
+      <div class="flex flex-col gap-y-0.5 overflow-y-scroll h-full">
 
-          <div :class="`absolute left-1 w-1 rounded-full h-4 ${chooseColorFieldStatusInput(inputProps.status)} shrink-0`" 
-          />
-
-          <div class="flex gap-5 items-center w-40">
-            <component class="w-4 h-4 text-base-white-700" :is="inputProps.icon" />
-            <div class="font-medium text-base-white-700 tracking-wide line-clamp-1">{{ inputProps.tag }}</div>
-          </div>
-
-          <div class="flex justify-between items-center w-full">
-            <input class="font-medium w-full h-8 bg-[rgb(0,0,0,0)] border-none outline-none"
-              :placeholder="inputProps.value === undefined ? 'Variados' : inputProps.value"
-              v-model.lazy.trim="getInputPropsComputed(inputProps.tag).value"
-            >
-
+        <div v-for="( inputProps, index ) of createInputField(inputValues)" :key="inputProps.tag"
+          v-show="checkFieldInputkAvailability(inputProps.value)" @click="focusInput(index)"
+          class="pr-1"  
+        >
+          <div
+            class="flex w-full group items-center gap-4 relative text-x1 rounded-md hover:bg-base-dark-400 cursor-pointer h-full pl-5 pr-2">
             <div
-              class="flex gap-1 mx-1 h-full"
-            >
-              <div class=" text-base-white-700 group-hover:text-white"
-                v-for="icon of mappingStatusIcon(inputProps.status)"
-              >
-                <component class="w-[0.85rem] h-[0.85rem]" :is="icon" />
+              :class="`absolute left-1 w-1 rounded-full h-4 ${chooseColorFieldStatusInput(inputProps.status)} shrink-0`" />
+
+            <div class="flex gap-5 items-center w-40">
+              <component class="w-4 h-4 text-base-white-700" :is="inputProps.icon" />
+              <div class="font-medium text-base-white-700 tracking-wide line-clamp-1">{{ inputProps.tag }}</div>
+            </div>
+
+            <div class="flex justify-between items-center w-full">
+              <input :ref="el => inputRefs[index] = el as HTMLInputElement"
+                class="font-medium w-full h-8 bg-[rgb(0,0,0,0)] border-none outline-none"
+                :placeholder="inputProps.value === undefined ? 'Variados' : inputProps.value"
+                v-model.lazy.trim="getInputPropsComputed(inputProps.tag).value">
+
+              <div class="flex gap-1 mx-1 h-full">
+                <div class=" text-base-white-700 group-hover:text-white"
+                  v-for="icon of mappingStatusIcon(inputProps.status)">
+                  <component class="w-[0.85rem] h-[0.85rem]" :is="icon" />
+                </div>
               </div>
             </div>
           </div>
+
 
         </div>
       </div>
     </div>
 
-    <div class="flex gap-4 pt-3 text-x1 font-medium opacity-40 hover:opacity-90 cursor-pointer" @click="handleShowUpAllMetadatas">
-      <component :is="isOpenAllMetadatas ? ChevronUp : ChevronDown" />
-      <p>Mostrar {{ isOpenAllMetadatas ? 'menos' : 'mais' }} metadatas</p>
-    </div>
+    <div class="">
+      <div class="flex items-center h-10">
+        <div
+          class="flex items-center w-full h-full gap-4 text-x1 font-medium opacity-40 hover:opacity-90 cursor-pointer leading-[0]"
+          @click="handleShowUpAllMetadatas" v-if="!isProcessingMetadatas">
+          <component class="size-5 mx-2" :is="isOpenAllMetadatas ? ChevronUp : ChevronDown" />
 
-    <MetadatasControllers />
+          <p>Mostrar {{ isOpenAllMetadatas ? 'menos' : 'mais' }} metadatas</p>
+        </div>
+
+        <!-- loading -->
+        <div class="flex relative items-center h-full w-full overflow-hidden" v-else>
+          <div class="absolute h-[0.2rem] left-[50%] rounded-full w-40 bg-green-600 loading_process_metadatas" />
+        </div>
+      </div>
+
+      <MetadatasControllers :currentMetadatas="metadatasForProcessing" />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import MetadatasControllers from './MetadatasControllers.vue';
 import { Captions, Disc, Tag, Music2, Link2, LucideUsers, CalendarIcon, Edit, WandSparkles, ChevronDown, ChevronUp } from 'lucide-vue-next';
-import { computed, inject, Ref, watch } from 'vue';
+import { computed, inject, provide, Ref, watch } from 'vue';
 import { MetaResult, CurrentMetaSave } from 'src/types/metas-type';
 import * as R from "ramda";
 import { ref } from 'vue';
 import { FieldTagStatus, FieldUniqueValue, FieldValue, IndexPathTags, InputDataProps, InputProps } from 'src/types/vue-types';
 import { Tags } from 'src/types/tags';
+import { BooleanLiteral } from 'typescript';
 
 const metasGenerated = inject<Ref<MetaResult[]>>("referenceFiles");
 const selectedReferenceMeta = inject<Ref<string[]>>('currentReferencesMeta')
 const sourceMetadatas = ref<IndexPathTags<string>>({});
-const currentMetadatas = ref<CurrentMetaSave>({})
+const currentMetadatas = ref<CurrentMetaSave>({});
+const isProcessingMetadatas = ref(false);
 const isOpenAllMetadatas = ref(false);
+const inputRefs = ref<(HTMLInputElement | undefined)[]>([])
 const tagList: (keyof Tags)[] = [
   'album', 'artist', 'title', 'trackNumber',
   'genre', 'year', 'partOfSet', 'date',
@@ -79,6 +97,13 @@ const inputValues = ref<InputProps>(
 );
 
 const { readMusicMetadatas } = window.api.nodeID3;
+
+const metadatasForProcessing = R.ifElse(
+  R.isEmpty,
+  R.always(currentMetadatas.value),
+  (selections: string[]) => R.pick(selections, currentMetadatas.value)
+)(selectedReferenceMeta.value)
+
 
 function createDefaultTags(tagList: (keyof Tags)[]) {
   return R.zipObj(
@@ -91,6 +116,7 @@ async function getAllOriginalMetadatas(allFields = false) {
   if (!isOpenAllMetadatas.value) return;
 
   if (R.isEmpty(sourceMetadatas.value)) {
+    isProcessingMetadatas.value = true;
     const { fileSourceMetadatas } = await readMusicMetadatas(
       metasGenerated.value.map(meta => meta.path)
     )
@@ -99,8 +125,9 @@ async function getAllOriginalMetadatas(allFields = false) {
       for (const tag of tagList) {
         const tagValue = metadatas[tag];
 
-        if(!currentMetadatas.value[path]?.[tag]){
-          createDefaultInputFields( path, { tagValue, tag, status : 'DEFAULT' })
+        if (!currentMetadatas.value[path]?.[tag] && tagValue) {
+
+          createDefaultInputFields(path, { tagValue, tag, status: 'DEFAULT' })
         }
 
         sourceMetadatas.value = R.assocPath([path, tag], tagValue, sourceMetadatas.value);
@@ -108,22 +135,22 @@ async function getAllOriginalMetadatas(allFields = false) {
       }
     }
 
+    isProcessingMetadatas.value = false;
     return;
   }
 
   for (const path in sourceMetadatas.value) {
     tagList.forEach((tag) => {
-      if (sourceMetadatas.value[path]?.[tag]) {
-        if(!currentMetadatas.value[path]?.[tag]){
+      if (sourceMetadatas.value[path]?.[tag] && !currentMetadatas.value[path]?.[tag]) {
 
         createDefaultInputFields(path, {
           tagValue: sourceMetadatas.value[path][tag],
-          tag, 
+          tag,
           status: 'DEFAULT'
         })
+
       }
-    }
-  })
+    })
 
   }
 }
@@ -132,33 +159,33 @@ function createDefaultInputFields(
   path: string,
   { tag, tagValue, status }: FieldUniqueValue & { tag: keyof Tags }
 ) {
- 
+
   if (
-    R.isNotEmpty(selectedReferenceMeta.value) && 
+    R.isNotEmpty(selectedReferenceMeta.value) &&
     !R.includes(path, selectedReferenceMeta.value)
   ) return;
 
-  const { tagValue: inputValue, status : inputStatus } = inputValues.value[tag];
+  const { tagValue: inputValue, status: inputStatus } = inputValues.value[tag];
 
 
   if (
-    inputValue === '' || 
+    inputValue === '' ||
     R.length(selectedReferenceMeta.value) === 1 ||
     status === 'EDITED' && R.isEmpty(selectedReferenceMeta.value) ||
     status === 'EDITED' && selectedReferenceMeta.value.length === metasGenerated.value.length
-  ){
-    inputValues.value[tag] = { tagValue, status : [status] };
+  ) {
+    inputValues.value[tag] = { tagValue, status: [status] };
     return;
   }
 
-  if (inputValue && inputValue !== tagValue){
+  if (inputValue && inputValue !== tagValue) {
     inputValues.value[tag] = {
       tagValue: undefined,
       status: R.includes(status, inputStatus) ? inputStatus : R.append(status, inputStatus)
     };
   }
 
-  if(!R.includes(status, inputStatus)){
+  if (!R.includes(status, inputStatus)) {
     inputValues.value[tag] = {
       tagValue: undefined,
       status: R.append(status, inputStatus)
@@ -196,21 +223,21 @@ function chooseIconByTag(tag: keyof Tags | string) {
   }[tag] || Tag);
 }
 
-function chooseColorFieldStatusInput(status: FieldTagStatus[]){
+function chooseColorFieldStatusInput(status: FieldTagStatus[]) {
   return R.length(status) === 1 ? {
-    "GENERATED" : 'bg-green-400',
-    "EDITED" : 'bg-base-white-400',
-    "DEFAULT" : 'bg-none',
-    }[status[0]]
-  : 'bg-yellow-400'
+    "GENERATED": 'bg-green-400',
+    "EDITED": 'bg-base-white-400',
+    "DEFAULT": 'bg-none',
+  }[status[0]]
+    : 'bg-yellow-400'
 }
 
-function mappingStatusIcon(status: FieldTagStatus[]){
-  return status.map( type => ({ 
-      "GENERATED": WandSparkles,
-      'EDITED' : Edit,
-      'DEFAULT' : Disc
-    })[type]
+function mappingStatusIcon(status: FieldTagStatus[]) {
+  return status.map(type => ({
+    "GENERATED": WandSparkles,
+    'EDITED': Edit,
+    'DEFAULT': Disc
+  })[type]
   )
 }
 
@@ -238,7 +265,6 @@ function watchSelectFilesChange() {
   getAllOriginalMetadatas()
 }
 
-
 function watchChangeInput(tag: keyof Tags) {
   return (inputChanged: string) => {
     for (const path in currentMetadatas.value) {
@@ -247,17 +273,17 @@ function watchChangeInput(tag: keyof Tags) {
         R.includes(path, selectedReferenceMeta.value) ||
         R.isEmpty(selectedReferenceMeta.value)
       ) {
-        const updatedValue : FieldUniqueValue = { 
+        const updatedValue: FieldUniqueValue = {
           status: 'EDITED', tagValue: inputChanged
         }
 
         currentMetadatas.value = R.assocPath(
-          [path, tag], 
+          [path, tag],
           updatedValue,
           currentMetadatas.value
         )
 
-        createDefaultInputFields(path, {...updatedValue, tag })
+        createDefaultInputFields(path, { ...updatedValue, tag })
       }
     }
   }
@@ -272,8 +298,12 @@ function getInputPropsComputed(tag: keyof Tags) {
   })
 }
 
-function watchOriginalMetadatas(isAllMetadatas : boolean){
+function watchOriginalMetadatas(isAllMetadatas: boolean) {
   watchSelectFilesChange()
+}
+
+function checkFieldInputkAvailability(fieldValue: string): boolean {
+  return fieldValue !== '' || (isOpenAllMetadatas.value && !isProcessingMetadatas.value)
 }
 
 watch(metasGenerated, genereteTagsInitial, { once: true });
@@ -284,4 +314,18 @@ function handleShowUpAllMetadatas() {
   isOpenAllMetadatas.value = !isOpenAllMetadatas.value
 }
 
+function focusInput(index: number) {
+  if (inputRefs.value[index]) {
+    inputRefs.value[index]?.focus();
+  }
+}
+
+provide('setIsProcessing', isProcessingMetadatas);
+provide('current', () => {
+  return R.ifElse(
+    R.isEmpty,
+    R.always(currentMetadatas.value),
+    (selections: string[]) => R.pick(selections, currentMetadatas.value)
+  )(selectedReferenceMeta.value)
+})
 </script>
