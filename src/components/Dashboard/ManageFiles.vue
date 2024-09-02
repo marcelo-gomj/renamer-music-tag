@@ -1,16 +1,14 @@
 <template>
-  <div :class="`flex relative group select-none flex-col ${metas ? 'w-[50%]' : 'w-full'} overflow-y-hidden h-full`">
-    <ToolsMenu />
-
-    <div class="flex flex-col h-full overflow-y-hidden">
+  <div :class="`flex gap-4 relative group select-none flex-col ${metas ? 'w-[50%]' : 'w-full'} overflow-y-hidden h-full`">
+    <div class="flex gap-2 flex-col h-full overflow-y-hidden">
       <div
         v-if="hasSourceDir" 
-        class="flex justify-between cursor-pointer items-center font-medium text-x1 tracking-wider pb-2"
+        class="flex justify-between cursor-pointer py-1.5 items-center font-medium text-x1 tracking-wider"
         @click="toggleFilesMusicList"
       >
-        <div>Arquivos referenciados</div>
+        <div class="leading-[0]">Arquivos referenciados</div>
   
-        <div :class="`group-hover:visible invisible p-1.5 ${openListMusics ? 'rotate-180' : ''}`">
+        <div :class="`group-hover:visible invisible px-1 h-full ${openListMusics ? 'rotate-180' : ''}`">
           <ChevronDown :class="`w-5 h-5 stroke-[2.5] `" />
         </div>
   
@@ -19,21 +17,21 @@
       <div class="flex flex-col h-full overflow-y-hidden">
         <div
           v-if="hasSourceDir" 
-          class="relative h-full overflow-y-hidden"
+          class="relative h-full overflow-y-hidden  px-1 py-2 border-[1.5px] border-base-dark-250 rounded-md"
+          v-show="openListMusics"  
         >
           <div 
-            class="`z-50 h-full overflow-y-scroll mr-3 hide-scrollbar `"
-            v-show="openListMusics"  
+            class="`z-50 h-full overflow-y-scroll hide-scrollbar`"
           >
-            <div>
+            <div class="space-y-1">
               <div v-for="meta of metas"
-                :class="`relative group/files my-1 mr-1 pr-2 rounded-[0.25rem] z-[999] hover:text-base-white-200 text-x1 font-medium cursor-pointer hover:bg-base-dark-400 ${ 
+                :class="`relative group/files py-[0.35rem] mr-1 pr-2 rounded-[0.25rem] z-[999] hover:text-base-white-200 text-x1 font-medium cursor-pointer hover:bg-base-dark-300 ${ 
                 isPathSelected(meta.path) ? 'text-base-white-300' : 'text-base-white-700'
                 }`"
               >
-                <div class="flex items-center gap-1">
+                <div class="flex items-center gap-2">
                   <div
-                    :class="`group-hover/files:visible px-2 ${ isPathSelected(meta.path) ? 'visible' : 'invisible'}`"
+                    :class="`group-hover/files:visible px-1 ${ isPathSelected(meta.path) ? 'visible' : 'invisible'}`"
                     @click=" _ => handleSelectFile(meta.path)"
                   >
                     <component class="size-[1.2rem]" :is="isPathSelected(meta.path) ? CircleCheck : Circle" />
@@ -41,7 +39,7 @@
                   
                   <div 
                     @click="_ => handleUniqueSelect(meta.path)"
-                    class="py-1 line-clamp-1 w-full"
+                    class="line-clamp-1 w-full"
                   >
                     {{ R.last(R.split('\\', meta.path)) }}
                   </div>
@@ -71,7 +69,8 @@
         </div>
       </div>
     </div>
-
+ 
+    <ToolsMenu />
   </div>
 </template>
 

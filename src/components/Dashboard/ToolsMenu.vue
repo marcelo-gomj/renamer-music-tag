@@ -1,5 +1,5 @@
 <template>
-  <div class="flex py-3 items-center gap-20 mb-2">
+  <div class="flex px-2 py-3 items-center gap-20">
     <div class="flex text-x0.5 font-medium gap-6 ">
       <div class="flex opacity-60 hover:opacity-100 cursor-pointer gap-3 items-center"
         @click="addFileSource"

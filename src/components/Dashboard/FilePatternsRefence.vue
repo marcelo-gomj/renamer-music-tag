@@ -1,9 +1,9 @@
 <template>
   <div class="w-full">
     <div class="pr-6">
-      <div class="font-medium text-x1 pt-1 pb-4">Referência dos arquivos</div>
+      <div class="font-medium text-x1 pb-4">Referência dos arquivos</div>
 
-      <div class="flex flex-wrap font-medium gap-x-2 gap-y-4 pr-4 w-full my-2 min-h-[2.2rem]">
+      <div class="flex flex-wrap font-medium gap-x-2 gap-y-4 pr-4 w-full my-1 min-h-[2.2rem]">
         <div v-if="meta" 
           v-for="pattern in patternsTagged()" 
           :key="meta[0].path" 
@@ -45,13 +45,14 @@ function patternsTagged() : (string | [string])[] {
 
 }
 
-const Icon : Record<keyof Tags & 'default', any> = {
+const Icon : {[tag in keyof Tags & 'default'] ?: { label: string, icon: any}} = {
   "trackNumber" : { label: "Faixa", icon: Music2 } ,
   "title" : { label: "Título", icon: Captions } ,
-  "album" : { label: "Albúm", icon: Disc } ,
+  "album" : { label: "Álbum", icon: Disc } ,
   "artist" : { label: "Artista", icon: LucideUsers },
   "partOfSet" : { label: "Disco de ", icon: Disc },
   "year":  { label: 'Ano', icon: CalendarIcon },
+  "genre" : { label: 'Genêro', icon: Tag},
   "default" : { label: "", icon: Tag }
 }
 </script>
