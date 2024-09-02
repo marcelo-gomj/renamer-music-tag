@@ -10,6 +10,10 @@ body {
   color: white;
 }
 
+.draggable{
+  -webkit-app-region: drag;
+}
+
 .container {
   padding-right: 6px; /* Espaço reservado para o scrollbar */
   overflow-y: auto;
@@ -42,7 +46,18 @@ body {
   transition: opacity 0.2s;
 }
 
-.container:hover::-webkit-scrollbar-thumb {
-  visibility: visible;
-  opacity: 1;
+
+
+
+.loading_process_metadatas {
+  animation: loading_infinity 2s linear infinite;
+}
+
+
+@keyframes loading_infinity {
+  from{
+    left: -100%;
+  }to{
+    left: 100%;
+  }
 }
