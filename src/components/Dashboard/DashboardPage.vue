@@ -1,8 +1,8 @@
 <template>
-	<div class="flex flex-col gap-6 relative h-[100vh] w-full p-4 px-6">
+	<div class="flex flex-col gap-4 relative h-full w-full">
 		<FilePatternsRefence />
 
-		<div class="flex gap-4 overflow-y-hidden h-full">
+		<div class="flex gap-6 overflow-y-hidden h-full">
 			<ManageFiles />
 			<MetadatasFields />
 		</div>
