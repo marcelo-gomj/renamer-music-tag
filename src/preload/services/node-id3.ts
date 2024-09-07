@@ -8,7 +8,6 @@ const editMusicMetadatas = async ( newMetadatas: CurrentMetaSave) => {
   const updatedFiles = [];
   const errorFiles = [];
 
-  console.log(newMetadatas)
   for(const path in newMetadatas){
     const metadatas = newMetadatas[path];
     
