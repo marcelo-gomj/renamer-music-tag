@@ -1,10 +1,21 @@
 <template>
   <div class="flex gap-3">
     <div
-      class="text-[0.9rem] text-center w-52 font-medium py-2 rounded-3xl px-1 border-2 border-base-dark-400 text-black bg-green-400  hover:bg-green-500 cursor-pointer"
+      :class="`text-black py-2 cursor-pointer border-[1.5px] font-medium  text-[0.9rem] rounded-3xl px-1  text-center w-52 ${ isSavingMetadatas ? 'bg-none border-base-dark-800 text-white' : 'bg-green-400  hover:bg-green-500  border-base-dark-400 '}`"
       @click="handleClickProcessMetadatas" 
     >
-      Aplicar Metadatas
+      <div 
+        v-if="isSavingMetadatas"
+      >
+        Salvando...
+      </div>
+      
+      <p
+        v-else
+      >
+        Aplicar Metadatas
+      </p>
+
     </div>
 
     <div 
@@ -32,37 +43,56 @@ import { WandSparkles, Undo2 } from "lucide-vue-next"
 import { CurrentMetaSave } from "src/types/metas-type";
 import { inject, Ref, ref } from "vue";
 import * as R from "ramda";
+import { useNotification } from "../../stores/notifications";
+import { useModal } from "../../stores/modal";
+import { h, useId } from "vue";
+import ErrorsDetailModalVue from "../ErrorsDetailModal.vue";
 
 const { editMusicMetadatas } = window.api.nodeID3;
 const isSavingMetadatas = ref(false);
 
-const {
-  currentMetadatas, 
-} = defineProps<{
-  currentMetadatas: CurrentMetaSave,
-}>()
-
-const setIsProcessing = inject<Ref<boolean>>('setIsProcessing');
 const current = inject<() => CurrentMetaSave>('current')
+const { notify } = useNotification(); 
+const { show, close } = useModal();
 
 const tools = [
   { title: 'Tag generated', Icon: WandSparkles, handler: () => { } },
   { title: 'Reset metadatas', Icon: Undo2, handler: () => { } },
 ]
-
-
 async function handleClickProcessMetadatas(){
-  setIsProcessing.value = true;
   isSavingMetadatas.value = true;
-  console.log('init', current())
+  const { updates, errors } = await editMusicMetadatas(R.clone(current()));
 
-  const da = current()
-  const result = await editMusicMetadatas(R.clone(da));
+  if(R.length(updates)){
+    notify({
+      title: R.length(updates) + ' dos arquivos foram atualizados',
+      id: Date.now(),
+      type: 'SUCCESS',
+      actionButton: () => { 
+        show({
+          title: 'Arquivos atulizados',
+          content: h(ErrorsDetailModalVue, { paths: updates, type: 'sucess' }),
+          firstButton: { label: 'Tentar novamente', fnAction: close }
+        })
+      }
+    })
+  }
 
-  console.log([result.errors, result.updates])
+  if(R.length(errors)){
+    notify({
+      title: R.length(errors) + ' dos arquivos falharam ao atualizar',
+      id: Date.now(),
+      type: "ERROR",
+      actionButton: () => 
+        show({
+          content: h(ErrorsDetailModalVue, {
+          paths: errors,
+          type: 'error'
+        })
+      })
+    })
+  }
 
-  setIsProcessing.value = false;
   isSavingMetadatas.value = false;
 }
-
 </script>

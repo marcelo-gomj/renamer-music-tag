@@ -23,7 +23,7 @@
             <div
               :class="`absolute left-1 w-1 rounded-full h-4 ${chooseColorFieldStatusInput(inputProps.status)} shrink-0`" />
 
-            <div class="flex gap-5 items-center w-40">
+            <div class="flex gap-5 items-center w-56">
               <component class="w-4 h-4 text-base-white-700" :is="inputProps.icon" />
               <div class="font-medium text-base-white-700 tracking-wide line-clamp-1">{{ inputProps.tag }}</div>
             </div>
@@ -76,12 +76,12 @@ import { computed, inject, provide, Ref, watch } from 'vue';
 import { MetaResult, CurrentMetaSave } from 'src/types/metas-type';
 import * as R from "ramda";
 import { ref } from 'vue';
-import { FieldTagStatus, FieldUniqueValue, FieldValue, IndexPathTags, InputDataProps, InputProps } from 'src/types/vue-types';
+import { FieldTagStatus, FieldUniqueValue, FieldValue, IndexPathTags, InputDataProps, InputProps, SetNotificationFunction } from 'src/types/vue-types';
 import { Tags } from 'src/types/tags';
-import { BooleanLiteral } from 'typescript';
 
 const metasGenerated = inject<Ref<MetaResult[]>>("referenceFiles");
 const selectedReferenceMeta = inject<Ref<string[]>>('currentReferencesMeta')
+const setNotification = inject<SetNotificationFunction>('setNotification')
 const sourceMetadatas = ref<IndexPathTags<string>>({});
 const currentMetadatas = ref<CurrentMetaSave>({});
 const isProcessingMetadatas = ref(false);
@@ -117,9 +117,18 @@ async function getAllOriginalMetadatas(allFields = false) {
 
   if (R.isEmpty(sourceMetadatas.value)) {
     isProcessingMetadatas.value = true;
-    const { fileSourceMetadatas } = await readMusicMetadatas(
+    const { fileSourceMetadatas, pathErrors } = await readMusicMetadatas(
       metasGenerated.value.map(meta => meta.path)
     )
+
+    if(pathErrors.length){
+      setNotification({
+        title: pathErrors.length + ' dos caminhos falharam ao ler metadatas',
+        id: Date.now(),
+        type : 'ERROR',
+        context: 'Esses caminhos não estaram representados'
+      })
+    }
 
     for (const { metadatas, path } of fileSourceMetadatas) {
       for (const tag of tagList) {
