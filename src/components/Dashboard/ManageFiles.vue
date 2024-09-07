@@ -25,26 +25,25 @@
           >
             <div class="space-y-1">
               <div v-for="meta of metas"
-                :class="`relative group/files py-[0.35rem] mr-1 pr-2 rounded-[0.25rem] z-[999] hover:text-base-white-200 text-x1 font-medium cursor-pointer hover:bg-base-dark-300 ${ 
+                :class="`relative group/files  mr-1 rounded-[0.25rem] z-[999] hover:text-base-white-200 text-x1 font-medium cursor-pointer hover:bg-base-dark-300 ${ 
                 isPathSelected(meta.path) ? 'text-base-white-300' : 'text-base-white-700'
                 }`"
               >
-                <div class="flex items-center gap-2">
+                <div class="flex items-center"
+                >
                   <div
-                    :class="`group-hover/files:visible px-1 ${ isPathSelected(meta.path) ? 'visible' : 'invisible'}`"
+                    :class="`group-hover/files:visible h-full py-[0.35rem] px-2 ${ isPathSelected(meta.path) ? 'visible' : 'invisible'}`"
                     @click=" _ => handleSelectFile(meta.path)"
                   >
                     <component class="size-[1.2rem]" :is="isPathSelected(meta.path) ? CircleCheck : Circle" />
                   </div>
                   
                   <div 
+                    class="line-clamp-1 w-full py-[0.35rem] pr-2"
                     @click="_ => handleUniqueSelect(meta.path)"
-                    class="line-clamp-1 w-full"
                   >
                     {{ R.last(R.split('\\', meta.path)) }}
                   </div>
-
-
                 </div>
               </div>
             </div>
