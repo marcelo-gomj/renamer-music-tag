@@ -1,4 +1,4 @@
-import { FunctionalComponent } from "vue"
+import { FunctionalComponent, h } from "vue"
 import { MetaResult } from "./metas-type"
 import { Tags } from "./tags"
 
@@ -13,15 +13,15 @@ export type SourceSelectProps = {
 
 export type RoutePath = (path: 'home' | 'dashboard' | 'config') => void
 
-export type NotificationLayoutProps = { 
+export type ModalGlobalLayoutProps = { 
   title ?: string, 
-  content ?: any,
+  content : ReturnType<typeof h> | '',
   firstButton ?: { label: string, fnAction: () => void },
   secondButton ?: { label: string, fnAction: () => void },
   closeModal ?: () => void
 }
 
-export type ProvideNotification = (options : NotificationLayoutProps) => void;
+export type ProvideModalGlobal = (options : ModalGlobalLayoutProps) => void;
 
 export type FieldTagStatus =  "EDITED" | "GENERATED" | "DEFAULT";
 
@@ -48,3 +48,13 @@ export type InputDataProps = {
   value: string, 
   icon : FunctionalComponent<any>
 }[]
+
+export type GlobalNotificationsProps = {
+  title: string,
+  id: number,
+  type: 'SUCCESS' | 'ERROR' | 'ALERT',
+  context?: string,
+  actionButton ?: (id: number) => void,
+};
+
+export type SetNotificationFunction = (notificationsProps: GlobalNotificationsProps) => void;

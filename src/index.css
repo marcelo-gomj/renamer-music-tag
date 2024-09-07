@@ -46,18 +46,48 @@ body {
   transition: opacity 0.2s;
 }
 
-
-
-
 .loading_process_metadatas {
   animation: loading_infinity 2s linear infinite;
 }
-
 
 @keyframes loading_infinity {
   from{
     left: -100%;
   }to{
     left: 100%;
+  }
+}
+
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 500ms ease;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+
+
+.notifications-enter-active{
+  animation: move-notifications 400ms ease-out ;
+} 
+
+.notifications-move{
+  transition: all 200ms linear;
+}
+
+.notifications-leave-active {
+  animation: move-notifications 200ms ease-out reverse ;
+}
+
+@keyframes move-notifications {
+  0%{
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  100%{
+    transform: translateX(0);
+    opacity: 1;
   }
 }
