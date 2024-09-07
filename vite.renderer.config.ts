@@ -21,6 +21,12 @@ export default defineConfig((env) => {
     ],
     resolve: {
       preserveSymlinks: true,
+      alias: {
+        "@" : './src',
+        "components" : './src/components',
+        "stores" : './src/stores',
+        "types" : './src/types'
+      }
     },
     clearScreen: false,
   } as UserConfig;
