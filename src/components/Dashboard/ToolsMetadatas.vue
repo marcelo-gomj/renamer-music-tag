@@ -1,5 +1,5 @@
 <template>
-  <div class="flex pb-3 items-center gap-20">
+  <div class="flex pb-3 items-center gap-20"> 
     <div class="flex text-x0.5 font-medium gap-8">
       <div class="flex opacity-60 hover:opacity-100 cursor-pointer gap-3 items-center">
         <FileSearch class="w-[1.05rem] h-[1.05rem]" />

@@ -18,50 +18,16 @@
 </template>
 
 <script setup lang="ts">
-import { watch, provide, ref, unref } from 'vue';
+import { provide, ref } from 'vue';
 import SideNotifications from './components/NotificationsGlobal.vue';
 import ModalGlobal from './components/ModalGlobal.vue';
-import { MetaResult } from './types/metas-type';
 import { X } from 'lucide-vue-next';
 import { useRoute } from './stores/route';
 
-const { generateMetasByDir } = window.api.metas
-
-const currentDirSource = ref<string[]>([]);
-const metas = ref<MetaResult[]>([]);
 const currentReferencesMeta = ref<string[]>([]);
 
 const router = useRoute();
 
-const addSourceDir = (sourcePath: string[]) => {
-	currentDirSource.value = sourcePath;
-}
 
-const updateMetaResults = async (paths ?: string[]) => {
-	const { error, results } = await generateMetasByDir( paths || [...currentDirSource.value]);
-	
-	if(results){
-		const metadatas = [ 
-			...(paths ? unref(metas.value) : []), 
-			...results
-		]
-
-		metas.value = metadatas;
-	}
-
-	return { error, results }
-}
-
-const watchDirSourceChange = async () => {
-	const { 
-		results, 
-		error
-	} = await updateMetaResults();
-}
-
-watch(currentDirSource, watchDirSourceChange);
-
-provide("sourceDir", { currentDir: currentDirSource, addSourceDir, updateMetaResults })
-provide("referenceFiles", metas)
 provide('currentReferencesMeta', currentReferencesMeta);
 </script>

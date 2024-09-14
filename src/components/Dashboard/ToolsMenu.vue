@@ -17,7 +17,6 @@
       
       <div 
         class="flex opacity-60 hover:opacity-100 cursor-pointer gap-3 items-center"
-        @click="updateFiles"
       >
         <RefreshCcw class="w-[1rem] h-[1rem]" />
         <p>Atualizar</p>
@@ -37,19 +36,17 @@ import { inject } from "vue";
 import { FileSearch, FolderSearch, RefreshCcw, MoreHorizontal } from "lucide-vue-next";
 import { SourceSelectProps } from "src/types/vue-types";
 import { OpenDialogOptions } from "electron";
+import { useMedatas } from "@/stores/metadatas";
 
 const { selectMusicsSources } = window.api.explorer;
-const { addSourceDir, updateMetaResults } = inject<SourceSelectProps>('sourceDir')
+// const { addSourceDir, updateMetaResults } = inject<SourceSelectProps>('sourceDir')
+const { updateSource } = useMedatas();
 
 const addSource = (options: OpenDialogOptions["properties"][0]) => async () => {
   const source = await selectMusicsSources([options, 'multiSelections']);
-  addSourceDir(source);
+  updateSource(source);
 }
+
 const addFolderSource = addSource('openDirectory')
 const addFileSource = addSource('openFile');
-
-const updateFiles = () => { 
-  updateMetaResults()
-}
-
 </script>

@@ -102,7 +102,7 @@ const metaObjectFunction : ObjectTransformer = {
   album: matchInfoStrings,
   artist: matchArtist,
   year: matchYearTrack,
-  feat: addFeatArtist
+  // feat: addFeatArtist
 }
 
 const generateMetasByMethods = generateMetas(metaObjectFunction);
@@ -175,7 +175,7 @@ const getSubFilesAndCheckSupportPaths = async (paths: string[]) => {
 const checkListPaths = (list: string[]) => R.length(list) === 0;
 
 const generateMetasByDir = async (paths: string[]) : ReturnMetas => {
-  if(checkListPaths(paths)) return ({ error: { name: 'no-sources' }});
+  if(checkListPaths(paths)) return ({ errors: { name: 'no-sources' }});
 
   const { 
     pathErrors,
@@ -183,7 +183,7 @@ const generateMetasByDir = async (paths: string[]) : ReturnMetas => {
   } = await getSubFilesAndCheckSupportPaths(paths);
 
 
-  if(checkListPaths(pathsFiltered)) return ({ error: { name: 'no-sources' }});
+  if(checkListPaths(pathsFiltered)) return ({ errors: { name: 'no-sources' }});
 
   const results = R.map( file => {
     const extensionSeparator = R.split(".", R.last(R.split("\\", file)) || '');
@@ -212,7 +212,7 @@ const generateMetasByDir = async (paths: string[]) : ReturnMetas => {
     results, 
     ...( 
       R.length(pathErrors) ? 
-      { error : { name: "source-error", pathErrors }} 
+      { errors : { name: "source-error", pathErrors }} 
       : {}
     ) 
   }

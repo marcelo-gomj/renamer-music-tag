@@ -2,7 +2,7 @@
   <div :class="`flex gap-4 relative group select-none flex-col ${metas ? 'w-[50%]' : 'w-full'} overflow-y-hidden h-full`">
     <div class="flex gap-2 flex-col h-full overflow-y-hidden">
       <div
-        v-if="hasSourceDir" 
+        v-if="sourceDirectory" 
         class="flex justify-between cursor-pointer py-1.5 items-center font-medium text-x1 tracking-wider"
         @click="toggleFilesMusicList"
       >
@@ -16,15 +16,15 @@
 
       <div class="flex flex-col h-full overflow-y-hidden">
         <div
-          v-if="hasSourceDir" 
+          v-if="sourceDirectory" 
           class="relative h-full overflow-y-hidden  px-1 py-2 border-[1.5px] border-base-dark-250 rounded-md"
           v-show="openListMusics"  
         >
           <div 
-            class="`z-50 h-full overflow-y-scroll hide-scrollbar`"
+            class="`z-50 h-full overflow-y-scroll custom-scrollbar `"
           >
             <div class="space-y-1">
-              <div v-for="meta of metas"
+              <div v-for="meta of metadatasGenereted"
                 :class="`relative group/files  mr-1 rounded-[0.25rem] z-[999] hover:text-base-white-200 text-x1 font-medium cursor-pointer hover:bg-base-dark-300 ${ 
                 isPathSelected(meta.path) ? 'text-base-white-300' : 'text-base-white-700'
                 }`"
@@ -74,23 +74,27 @@
 </template>
 
 <script setup lang="ts">
-import { inject, Ref, ref } from "vue";
+import { inject, Ref, ref, watch } from "vue";
 import ToolsMenu from "../Dashboard/ToolsMenu.vue";
 import { ChevronDown, FolderSearch, CircleCheck, Circle, Eye, EyeOff } from 'lucide-vue-next';
 import { MetaResult } from "src/types/metas-type";
-import { SourceSelectProps } from "src/types/vue-types";
 import * as R from "ramda";
+import { useMedatas } from "@/stores/metadatas";
+import { storeToRefs } from "pinia";
+
 
 const openListMusics = ref(true);
-const { addSourceDir, currentDir } = inject<SourceSelectProps>("sourceDir");
+const metadatas = useMedatas();
+const { sourceDirectory, metadatasGenereted } = storeToRefs(metadatas);
 const currentReferencesMeta = inject<Ref<string[]>>("currentReferencesMeta");
+
 
 async function selectFolderSource(){
   const paths = await window.api.explorer.selectMusicsSources(["openDirectory"]);
-  addSourceDir(paths)
+  // addSourceDir(paths)
 } 
 
-const hasSourceDir = currentDir;
+const [{}, {}] = R.juxt([storeToRefs, R.identity])(useMedatas())
 const metas = inject<MetaResult[]>('referenceFiles');
 
 function toggleFilesMusicList() {
