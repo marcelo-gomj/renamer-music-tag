@@ -2,6 +2,7 @@ import type { ConfigEnv, UserConfig } from 'vite';
 import { defineConfig } from 'vite';
 import vue from "@vitejs/plugin-vue"
 import { pluginExposeRenderer } from './vite.base.config';
+import path  from 'path';
 // https://vitejs.dev/config
 export default defineConfig((env) => {
   const forgeEnv = env as ConfigEnv<'renderer'>;
@@ -22,10 +23,10 @@ export default defineConfig((env) => {
     resolve: {
       preserveSymlinks: true,
       alias: {
-        "@" : './src',
-        "components" : './src/components',
-        "stores" : './src/stores',
-        "types" : './src/types'
+        "@" : path.resolve(__dirname, './src'),
+        "components" : 'src/components',
+        "stores" : 'src/stores',
+        "types" : 'src/types'
       }
     },
     clearScreen: false,
