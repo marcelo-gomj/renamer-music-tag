@@ -21,16 +21,23 @@ type MetaResult = {
 
 type ReturnMetas = Promise<{
   results ?: MetaResult[],
-  error ?: { 
+  errors ?: { 
     name : 'no-sources' | 'source-error',
     pathErrors ?: string[]
   }
 }>
 
-type CurrentMetaSave = { [path: string] : {[ metakey in keyof Tags ] : FieldUniqueValue }} 
+type MetaSaveValues = {
+  [ metakey in keyof Tags ] : FieldUniqueValue
+}
+
+type CurrentMetaSave = { 
+  [path: string] : MetaSaveValues
+} 
 
 export { 
   ObjectTransformer, 
+  MetaSaveValues,
   MetaObjectResult, 
   CurrentMetaSave,
   MetasAsMethod, 
