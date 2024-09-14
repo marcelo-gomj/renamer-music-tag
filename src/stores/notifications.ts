@@ -9,12 +9,13 @@ export const useNotification = defineStore('notifications', () => {
 
   function notify(notificationProps : GlobalNotificationsProps){
     const lastNotification = R.head(notifications.value);
-      // close all notifications
-      clearTimeout(timeoutNotification.value);
-      timeoutNotification.value = setTimeout(() => {
-        notifications.value = R.filter(R.propEq('ERROR', 'type'), notifications.value);
-      }, 15000);
-  
+      
+    // close all notifications
+    clearTimeout(timeoutNotification.value);
+    timeoutNotification.value = setTimeout(() => {
+      notifications.value = R.filter(R.propEq('ERROR', 'type'), notifications.value);
+    }, 15000);
+
     if(!lastNotification){
       notifications.value = [notificationProps];
       return;
@@ -33,6 +34,10 @@ export const useNotification = defineStore('notifications', () => {
     notifications.value = R.filter(notification => notification.id !== id, notifications.value);
   }
 
+  function clearAll(){
+    notifications.value = [];
+  }
+
   function allNotifications(){
     return notifications.value
   }
@@ -40,6 +45,7 @@ export const useNotification = defineStore('notifications', () => {
   return {
     allNotifications,
     notify,
+    clearAll,
     removeByNotificationId
   }
 })
