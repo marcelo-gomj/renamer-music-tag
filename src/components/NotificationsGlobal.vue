@@ -7,15 +7,17 @@
         v-for="({ title, type, id,  context, actionButton }, index) of allNotifications()"
         :key="id"
         :class="[
-          'bg-base-dark-200 border-[1.5px] hover:!opacity-100 border-base-dark-900 hover:border-base-white-700' , 
-          (index === 0) ? ' border-white' : '!opacity-45',
+          'bg-base-dark-200 border-[1.5px] transition-[border-color_100ms_ease] hover:!opacity-100 border-base-dark-900 hover:border-base-white-700' , 
+          (index === 0) ? '' : '!opacity-45',
           ' rounded-md hover:opacity-100 hover:border-base-dark-900 cursor-pointer ',
         ]"
+        @click="event => { actionButton && actionButton(id); event.stopPropagation()}"
       >
-        <header class="flex items-center">
+        <header 
+          class="flex items-center"
+        >
           <div 
             class="flex w-full items-center gap-4 py-3 px-3 h-full"
-            @click="_ => actionButton && actionButton(id)"
           >
             <component 
               :is="ICONS_TYPE[type].icon" 
@@ -25,7 +27,7 @@
           </div>
   
           <span
-            @click="() => closeNotification(id)"
+            @click="event => { closeNotification(id); event.stopPropagation()}"
             class="p-2 h-full hover:scale-105 hover:opacity-100 opacity-70"
           >
             <X class="size-[1rem]" />
@@ -33,7 +35,7 @@
         </header>
   
         <div
-          class="text-x0.5 pt-4"
+          class="text-x0.5 px-6 py-2"
           v-if="!!context"
         >{{ context }}</div>
       </div>

@@ -14,37 +14,20 @@ body {
   -webkit-app-region: drag;
 }
 
-.container {
-  padding-right: 6px; /* Espaço reservado para o scrollbar */
-  overflow-y: auto;
-}
-
 ::-webkit-scrollbar {
-  width: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: rgb(12, 12, 12);
+  width: 6px; /* Define a largura do scrollbar quando ele aparece */
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgb(30, 30, 30);
-  border-radius: 4px;
+  background-color: rgb(22,22,22); /* Cor do thumb do scrollbar */
+  border-radius: 8px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #555;
+::-webkit-scrollbar-track {
+  background-color: rgb(12, 12, 12); /* Cor do track do scrollbar */
 }
 
-.container::-webkit-scrollbar {
-  width: 6px;
-}
 
-.container::-webkit-scrollbar-thumb {
-  visibility: hidden;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
 
 .loading_process_metadatas {
   animation: loading_infinity 2s linear infinite;
@@ -88,6 +71,19 @@ body {
   }
   100%{
     transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+
+.meta-fields-enter-active{
+  animation: show-fields 500ms ease;
+}
+
+@keyframes show-fields {
+  0%{
+    opacity: 0;
+  }100%{
     opacity: 1;
   }
 }
