@@ -1,7 +1,14 @@
-import { generateMetasByDir } from "./meta-generator";
+import { generateMetadatasByPaths } from './metadatas-generator';
+// import { generateMetasByDir } from './meta-generator';
 
-  generateMetasByDir(['D:\\music'])
-  .then(data => {
-    console.log(data)
-  })
+import { map, split } from "ramda"
+
+(async () => {
+  const data = await (
+    generateMetadatasByPaths
+  )([
+  ])
+  console.log(data.results[0])
+})()
+
 

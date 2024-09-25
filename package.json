@@ -7,7 +7,8 @@
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
-    "coc": "tsx watch src/preload/test.ts",
+    "log": "tsx watch src/preload/test.ts",
+    "log:split": "tsx watch src/preload/split-test.test.ts",
     "test:meta": "tsx watch src/preload/test-metadatas.ts",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
@@ -41,7 +42,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@types/ramda": "^0.30.0",
+    "@types/ramda": "^0.30.2",
     "@vitejs/plugin-vue": "^5.0.4",
     "electron-squirrel-startup": "^1.0.0",
     "lucide-vue-next": "^0.368.0",
