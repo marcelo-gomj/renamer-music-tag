@@ -30,8 +30,9 @@
                 <input :ref="el => inputRefs[index] = el as HTMLInputElement"
                   class="font-medium w-full h-8 bg-[rgb(0,0,0,0)] border-none outline-none"
                   :placeholder="inputProps.value === undefined ? 'Variados' : inputProps.value"
-                  v-model.lazy.trim="getInputPropsComputed(inputProps.tag).value">
-
+                  v-model.lazy.trim="getInputPropsComputed(inputProps.tag).value"
+                />
+ 
                 <div class="flex gap-1 mx-1 h-full">
                   <div class=" text-base-white-700 group-hover:text-white"
                     v-for="icon of mappingStatusIcon(inputProps.status)">
@@ -70,7 +71,7 @@
 import MetadatasControllers from './MetadatasControllers.vue';
 import { Captions, Disc, Tag, Music2, Link2, LucideUsers, CalendarIcon, Edit, WandSparkles, ChevronDown, ChevronUp } from 'lucide-vue-next';
 import { computed, inject, provide, Ref, watch } from 'vue';
-import { MetaResult } from 'src/types/metas-type';
+import { MetadatasResult } from 'src/types/metas-type';
 import * as R from "ramda";
 import { ref } from 'vue';
 import { FieldTagStatus, FieldUniqueValue, IndexPathTags, InputDataProps, InputProps, SetNotificationFunction } from 'src/types/vue-types';
@@ -93,7 +94,7 @@ console.log("CARTA ", currentMetadatas)
 const tagList: (keyof Tags)[] = [
   'album', 'artist', 'title', 'trackNumber',
   'genre', 'year', 'partOfSet', 'date',
-  'publisher', 'copyright',
+  'publisher', 'copyright', 'performerInfo'
 ]
 const inputValues = ref<InputProps>(
   createDefaultTags(tagList)
@@ -205,12 +206,12 @@ function createDefaultInputFields(
   }
 }
 
-function genereteTagsInitial(metaResultGenerated: Partial<MetaResult>[]) {
+function genereteTagsInitial(metaResultGenerated: Partial<MetadatasResult>[]) {
   for (const { path, metadatas } of metaResultGenerated) {
     if (metadatas) {
-      R.forEachObjIndexed(({ value }, tag) => {
+      R.forEachObjIndexed(({ pattern }, tag) => {
         const tagValues: FieldUniqueValue = {
-          tagValue: value,
+          tagValue: pattern,
           status: 'GENERATED'
         }
 
@@ -328,7 +329,6 @@ function focusInput(index: number) {
     inputRefs.value[index]?.focus();
   }
 }
-
 provide('setIsProcessing', isProcessingMetadatas);
 provide('current', () => {
   return R.ifElse(
