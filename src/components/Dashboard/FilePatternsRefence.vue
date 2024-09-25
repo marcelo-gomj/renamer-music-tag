@@ -11,7 +11,7 @@
 
           <component :is="type(pattern) === 'Array'  ? METADATAS[pattern[0]].icon : null" class="w-[1rem] h-[1rem]" />
 
-          <div class="leading-[1]">{{ type(pattern) === 'Array' ? (METADATAS[pattern[0]].label || pattern[0]): pattern }}</div>
+          <div class="leading-[1]">{{ is(Array, pattern) ? (METADATAS[pattern[0]].label || pattern[0]): pattern }}</div>
         </div>
 
         <div v-else class="flex justify-between rounded-lg h-full flex-col w-full ">
@@ -24,7 +24,7 @@
 
 <script setup lang="ts">
 import { Music2, Captions, Disc, CalendarIcon, Tag, LucideUsers } from 'lucide-vue-next';
-import { toPairs, update, type} from "ramda";
+import { toPairs, update, type, is } from "ramda";
 import { useMedatas } from '@/stores/metadatas';
 import { storeToRefs } from 'pinia';
 
