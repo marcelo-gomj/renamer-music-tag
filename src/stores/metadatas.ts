@@ -1,4 +1,4 @@
-import { CurrentMetaSave, MetaResult, MetaSaveValues } from "@/types/metas-type";
+import { CurrentMetaSave, MetadatasResult, MetaSaveValues } from "@/types/metas-type";
 import { defineStore } from "pinia";
 import { h, ref, unref, watch } from "vue";
 import { useNotification } from "./notifications";
@@ -8,29 +8,27 @@ import ErrorsDetailModal from "@/components/ErrorsDetailModal.vue";
 import { FieldUniqueValue } from "@/types/vue-types";
 
 export const useMedatas = defineStore('metadatas', () => {
-  const metadatasGenereted = ref<MetaResult[]>([]);
+  const metadatasGenereted = ref<MetadatasResult[]>([]);
   const sourceDirectory = ref<string[]>([]);
   const currentMetadatas = ref<CurrentMetaSave>({});
   const { notify } = useNotification();
   const { show } = useModal();
 
-  const { generateMetasByDir } = window.api.metas;
+  const { generateMetadatasByPaths } = window.api.metas;
 
   async function updateSourceDirectory(paths: string[], isUpdate = false){
-    const { results, errors } = await generateMetasByDir(R.clone(paths));
+    const { results, errorPaths } = await generateMetadatasByPaths(R.clone(paths));
+    console.log("RESULTS", results);
 
-    console.log("RESULTS", results)
-
-    if(errors){
-      const { name, pathErrors } = errors;
+    if(errorPaths.length){
       notify({
-        title: pathErrors.length + ' com erro de ' +  name,
+        title: errorPaths.length + ' arquivos com problemas',
         id: Date.now(),
         type: 'ERROR',
         context: 'Verfique novamente as fontes que você adicionou',
         actionButton: () => show({ 
           title : 'Erros', 
-          content: h(ErrorsDetailModal, { paths: pathErrors, type: 'error' })
+          content: h(ErrorsDetailModal, { paths: errorPaths, type: 'error' })
         })
       }) 
     }
@@ -41,15 +39,13 @@ export const useMedatas = defineStore('metadatas', () => {
       results;
 
       for(const { path, metadatas } of metadatasGenereted.value){
-        R.forEachObjIndexed(({ value : tagValue }, field) => {
+        for(const tag in metadatas){
           currentMetadatas.value[path] = R.assocPath(
-            [field], { status: 'GENERATED', tagValue },
+            [tag], { status: 'GENERATED', tagValue: metadatas[tag].pattern },
             currentMetadatas.value[path] 
           )
-        }, metadatas)
+        }
       }
-
-      console.log("METADATAS", currentMetadatas.value);
     }
   }
 

@@ -1,31 +1,27 @@
 import { Tags } from "./tags";
-import { FieldUniqueValue, FieldValue } from "./vue-types";
+import { FieldUniqueValue } from "./vue-types";
 
-
-type MetasAsMethod = keyof Tags;
-type MetaKeys <T> =  { [key in MetasAsMethod] ?: T  }
-type MetaValue = { value: string, patternIndex ?: number} | null;
-type ObjectTransformer = MetaKeys<TransformMetaFunction>
-type MetaObjectResult = Partial<MetaKeys<MetaValue | null>> 
-type TransformMetaFunction = (
+type TagPattern = {
   pattern: string,
-  metaAccumulate ?: MetaObjectResult,
-  index ?: number
-) => ( MetaObjectResult | string[]);
-
-type MetaResult = {
-  metadatas : MetaObjectResult,
-  patterns: string[],
-  path: string
+  patternIndex : number | null,  
 }
 
-type ReturnMetas = Promise<{
-  results ?: MetaResult[],
-  errors ?: { 
-    name : 'no-sources' | 'source-error',
-    pathErrors ?: string[]
-  }
-}>
+type KeyTag  = (keyof Tags | `pattern-${string}` | string)
+type PatternsMetadata = Record<KeyTag, TagPattern>
+
+type MetadatasResult = {
+  metadatas : PatternsMetadata,
+  path: string,
+  patterns: string[]
+}
+
+type TagTransformerFunction = (
+  index: number, regexPattern: string[] , patterns ?: PatternsMetadata
+) => Record<KeyTag, TagPattern>;
+
+type MetaTransformerFunction = [
+  keyof Tags | string, RegExp, (TagTransformerFunction | null)
+][];
 
 type MetaSaveValues = {
   [ metakey in keyof Tags ] : FieldUniqueValue
@@ -35,14 +31,12 @@ type CurrentMetaSave = {
   [path: string] : MetaSaveValues
 } 
 
-export { 
-  ObjectTransformer, 
+export {
+  TagTransformerFunction,
+  MetaTransformerFunction,
+  TagPattern,
+  PatternsMetadata,
+  MetadatasResult,
   MetaSaveValues,
-  MetaObjectResult, 
   CurrentMetaSave,
-  MetasAsMethod, 
-  MetaResult, 
-  ReturnMetas ,
-  MetaKeys, 
-  MetaValue
 }
