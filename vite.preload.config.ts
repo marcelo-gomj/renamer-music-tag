@@ -1,7 +1,7 @@
 import type { ConfigEnv, UserConfig } from 'vite';
 import { defineConfig, mergeConfig } from 'vite';
 import { getBuildConfig, external, pluginHotRestart } from './vite.base.config';
-
+import path from 'path';
 // https://vitejs.dev/config
 export default defineConfig((env) => {
   const forgeEnv = env as ConfigEnv<'build'>;
@@ -21,6 +21,12 @@ export default defineConfig((env) => {
           assetFileNames: '[name].[ext]',
         },
       },
+    },
+    resolve: {
+      preserveSymlinks: true,
+      alias: {
+        "types" : path.resolve(__dirname, './src/types')
+      }
     },
     plugins: [pluginHotRestart('reload')],
   };

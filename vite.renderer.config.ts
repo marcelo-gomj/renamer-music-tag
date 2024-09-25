@@ -24,9 +24,9 @@ export default defineConfig((env) => {
       preserveSymlinks: true,
       alias: {
         "@" : path.resolve(__dirname, './src'),
-        "components" : 'src/components',
-        "stores" : 'src/stores',
-        "types" : 'src/types'
+        "components" : path.resolve(__dirname, './src/components'),
+        "stores" : path.resolve(__dirname,'./src/stores'),
+        "types" : path.resolve(__dirname, './src/types')
       }
     },
     clearScreen: false,
