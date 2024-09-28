@@ -31,12 +31,15 @@ export const useNotification = defineStore('notifications', () => {
   }
 
   function removeByNotificationId(id: number){
-    notifications.value = R.filter(notification => notification.id !== id, notifications.value);
+    notifications.value = R.filter(
+      notification => notification.id !== id, 
+      notifications.value
+    );
   }
 
   function clearAll(){
     notifications.value = [];
-  }
+  }  
 
   function allNotifications(){
     return notifications.value
