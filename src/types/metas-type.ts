@@ -1,5 +1,5 @@
 import { Tags } from "./tags";
-import { FieldValue } from "./vue-types";
+import { FieldUniqueValue, FieldValue } from "./vue-types";
 
 type PatternValue = {
   pattern: string,
@@ -31,7 +31,7 @@ type MetaTransformerFunction = [
 ][];
 
 type MetadataValues = {
-  [ tag in keyof Tags] ?: FieldValue 
+  [ tag in keyof Tags] ?: FieldUniqueValue 
 };
 
 type CurrentUserMetadatas = {

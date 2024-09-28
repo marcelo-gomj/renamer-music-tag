@@ -62,7 +62,7 @@
         </div>
       </div>
 
-      <MetadatasControllers :currentMetadatas="metadatasForProcessing" />
+      <MetadatasControllers />
     </div>
   </div>
 </template>
@@ -85,7 +85,6 @@ import {
   IndexPathTags, 
   InputDataProps, 
   InputProps, 
-  SetNotificationFunction 
 } from 'src/types/vue-types';
 import { Tags } from 'src/types/tags';
 import { useMedatas } from '@/stores/metadatas';
@@ -286,8 +285,8 @@ function watchSelectFilesChange() {
   inputValues.value = createDefaultTags(tagList);
 
   R.forEachObjIndexed((metadatas, path) => {
-    R.forEachObjIndexed(({ tagValue }, tag) => {
-      createDefaultInputFields(String(path), { status: 'GENERATED', tagValue, tag })
+    R.forEachObjIndexed(({ tagValue, status }, tag) => {
+      createDefaultInputFields(String(path), { status, tagValue, tag })
     }, metadatas)
   }, currentMetadatas.value);
 
