@@ -7,7 +7,7 @@
       </div>
 
       <div class="text-base-white-800 mr-3">
-        {{ selectedReferenceMeta.length || metadatasGenereted.length }} dos arquivos referentes
+        {{ pathSelections.size || metadatasGenereted.length }} dos arquivos referentes
       </div>
     </div>
 
@@ -69,18 +69,30 @@
 
 <script setup lang="ts">
 import MetadatasControllers from './MetadatasControllers.vue';
-import { Captions, Disc, Tag, Music2, Link2, LucideUsers, CalendarIcon, Edit, WandSparkles, ChevronDown, ChevronUp } from 'lucide-vue-next';
-import { computed, inject, provide, Ref, watch } from 'vue';
-import { MetadatasResult } from 'src/types/metas-type';
+import { computed, inject, ref, provide, Ref, watch } from 'vue';
 import * as R from "ramda";
-import { ref } from 'vue';
-import { FieldTagStatus, FieldUniqueValue, IndexPathTags, InputDataProps, InputProps, SetNotificationFunction } from 'src/types/vue-types';
+import { 
+  Captions, Disc, Tag, Music2,
+  Link2, LucideUsers, CalendarIcon, Edit,
+  WandSparkles, ChevronDown, ChevronUp 
+} from 'lucide-vue-next';
+
+import { CurrentUserMetadatas, GenMetadatasResult } from 'src/types/metas-type';
+import { 
+  FieldTagStatus, 
+  FieldUniqueValue, 
+  FieldValue, 
+  IndexPathTags, 
+  InputDataProps, 
+  InputProps, 
+  SetNotificationFunction 
+} from 'src/types/vue-types';
 import { Tags } from 'src/types/tags';
 import { useMedatas } from '@/stores/metadatas';
 import { storeToRefs } from 'pinia';
+import { useNotification } from '@/stores/notifications';
+import { usePathSelection } from '@/stores/path-selections';
 
-const selectedReferenceMeta = inject<Ref<string[]>>('currentReferencesMeta')
-const setNotification = inject<SetNotificationFunction>('setNotification')
 const sourceMetadatas = ref<IndexPathTags<string>>({});
 const isProcessingMetadatas = ref(false);
 const isOpenAllMetadatas = ref(false);
@@ -88,14 +100,19 @@ const inputRefs = ref<(HTMLInputElement | undefined)[]>([])
 
 
 const metadatas = useMedatas();
-const  { currentMetadatas, sourceDirectory, metadatasGenereted } = storeToRefs(metadatas);
+const usePath = usePathSelection();
+const { pathSelections } = storeToRefs(usePath);
+const { isPathSelected } = usePath;
+const  { currentMetadatas, metadatasGenereted } = storeToRefs(metadatas);
+const notifications = useNotification();
 const { updateSource, updateByPathReference } = metadatas;
-console.log("CARTA ", currentMetadatas)
+
 const tagList: (keyof Tags)[] = [
   'album', 'artist', 'title', 'trackNumber',
   'genre', 'year', 'partOfSet', 'date',
   'publisher', 'copyright', 'performerInfo'
 ]
+
 const inputValues = ref<InputProps>(
   createDefaultTags(tagList)
 );
@@ -106,14 +123,14 @@ const metadatasForProcessing = R.ifElse(
   R.isEmpty,
   R.always(currentMetadatas),
   (selections: string[]) => R.pick(selections, currentMetadatas.value)
-)(selectedReferenceMeta.value)
+)([...pathSelections.value.keys()])
 
 
 function createDefaultTags(tagList: (keyof Tags)[]) {
-  return R.zipObj(
-    tagList,
-    R.repeat({ tagValue: '', status: ['DEFAULT'] as FieldTagStatus[] }, tagList.length)
-  )
+  return new Map(R.map( tag => [
+    tag, 
+    { tagValue: '', status : ['DEFAULT'] } as FieldValue
+  ], tagList))
 }
 
 async function getAllOriginalMetadatas(allFields = false) {
@@ -126,7 +143,7 @@ async function getAllOriginalMetadatas(allFields = false) {
     )
 
     if (pathErrors.length) {
-      setNotification({
+      notifications.notify({
         title: pathErrors.length + ' dos caminhos falharam ao ler metadatas',
         id: Date.now(),
         type: 'ERROR',
@@ -140,10 +157,17 @@ async function getAllOriginalMetadatas(allFields = false) {
 
         if (!currentMetadatas.value[path]?.[tag] && tagValue) {
 
-          createDefaultInputFields(path, { tagValue, tag, status: 'DEFAULT' })
+          createDefaultInputFields(
+            path, 
+            { tagValue, tag, status: 'DEFAULT' }
+          )
         }
 
-        sourceMetadatas.value = R.assocPath([path, tag], tagValue, sourceMetadatas.value);
+        sourceMetadatas.value = R.assocPath(
+          [path, tag], 
+          tagValue, 
+          sourceMetadatas.value
+        );
 
       }
     }
@@ -172,58 +196,49 @@ function createDefaultInputFields(
   path: string,
   { tag, tagValue, status }: FieldUniqueValue & { tag: keyof Tags }
 ) {
-
   if (
-    R.isNotEmpty(selectedReferenceMeta.value) &&
-    !R.includes(path, selectedReferenceMeta.value)
+    pathSelections.value.size &&
+    !isPathSelected(path)
   ) return;
 
-  const { tagValue: inputValue, status: inputStatus } = inputValues.value[tag];
+  const { tagValue: inputValue, status: inputStatus } = inputValues.value.get(tag);
 
 
   if (
     inputValue === '' ||
-    R.length(selectedReferenceMeta.value) === 1 ||
-    status === 'EDITED' && R.isEmpty(selectedReferenceMeta.value) ||
-    status === 'EDITED' && selectedReferenceMeta.value.length === metadatasGenereted.value.length
+    pathSelections.value.size === 1 ||
+    status === 'EDITED' && pathSelections.value.size ||
+    status === 'EDITED' && pathSelections.value.size === metadatasGenereted.value.length
   ) {
-    inputValues.value[tag] = { tagValue, status: [status] };
+    inputValues.value.set(tag, { tagValue, status: [status] });
     return;
   }
 
   if (inputValue && inputValue !== tagValue) {
-    inputValues.value[tag] = {
+    inputValues.value.set(tag, {
       tagValue: undefined,
       status: R.includes(status, inputStatus) ? inputStatus : R.append(status, inputStatus)
-    };
+    })
   }
 
   if (!R.includes(status, inputStatus)) {
-    inputValues.value[tag] = {
+    inputValues.value.set(tag, {
       tagValue: undefined,
       status: R.append(status, inputStatus)
-    }
+    })
   }
 }
 
-function genereteTagsInitial(metaResultGenerated: Partial<MetadatasResult>[]) {
-  for (const { path, metadatas } of metaResultGenerated) {
-    if (metadatas) {
-      R.forEachObjIndexed(({ pattern }, tag) => {
-        const tagValues: FieldUniqueValue = {
-          tagValue: pattern,
-          status: 'GENERATED'
-        }
-
-        // set initial tag data for input values
-        createDefaultInputFields(path, { ...tagValues, tag });
-
-        return tagValues;
-      }, metadatas)
-
-    }
-  }
-}
+// function genereteTagsInitial(currentMetadatas: CurrentUserMetadatas[]) {
+//   R.forEachObjIndexed((metadatas, path) => {
+//     R.forEachObjIndexed((meta, tag) => {
+//       createDefaultInputFields(
+//         String(path), 
+//         {status: , tagValue, tag }
+//       );
+//     }, metadatas)
+//   }, currentMetadatas)
+// }
 
 function chooseIconByTag(tag: keyof Tags | string) {
   return ({
@@ -257,7 +272,7 @@ function mappingStatusIcon(status: FieldTagStatus[]) {
 
 function createInputField(inputValues: InputProps): InputDataProps {
   return R.map(tag => {
-    const input = inputValues[tag];
+    const input = inputValues.get(tag);
     return ({
       tag,
       icon: chooseIconByTag(tag),
@@ -271,8 +286,8 @@ function watchSelectFilesChange() {
   inputValues.value = createDefaultTags(tagList);
 
   R.forEachObjIndexed((metadatas, path) => {
-    R.forEachObjIndexed(({ status, tagValue }, tag) => {
-      createDefaultInputFields(String(path), { status, tagValue, tag })
+    R.forEachObjIndexed(({ tagValue }, tag) => {
+      createDefaultInputFields(String(path), { status: 'GENERATED', tagValue, tag })
     }, metadatas)
   }, currentMetadatas.value);
 
@@ -280,13 +295,12 @@ function watchSelectFilesChange() {
 }
 
 function watchChangeInput(tag: keyof Tags) {
-  console.log("cheguei", 3)
   return (inputChanged: string) => {
     for (const path in currentMetadatas.value) {
       if (
-        R.isNotEmpty(selectedReferenceMeta.value) &&
-        R.includes(path, selectedReferenceMeta.value) ||
-        R.isEmpty(selectedReferenceMeta.value)
+        pathSelections.value.size &&
+        isPathSelected(path) ||
+        pathSelections.value.size === 0
       ) {
         const updatedValue: FieldUniqueValue = {
           status: 'EDITED', tagValue: inputChanged
@@ -302,7 +316,7 @@ function watchChangeInput(tag: keyof Tags) {
 function getInputPropsComputed(tag: keyof Tags) {
   return computed({
     get() {
-      return inputValues.value[tag].tagValue
+      return inputValues.value.get(tag).tagValue
     },
     set: watchChangeInput(tag)
   })
@@ -316,8 +330,8 @@ function checkFieldInputkAvailability(fieldValue: string): boolean {
   return fieldValue !== '' || (isOpenAllMetadatas.value && !isProcessingMetadatas.value)
 }
 
-watch(metadatasGenereted, genereteTagsInitial, { once: true });
-watch(selectedReferenceMeta, watchSelectFilesChange, { deep: true });
+// watch(metadatasGenereted, watchSelectFilesChange);
+watch([pathSelections, metadatasGenereted], watchSelectFilesChange, { deep: true });
 watch(isOpenAllMetadatas, watchOriginalMetadatas);
 
 function handleShowUpAllMetadatas() {
@@ -329,12 +343,5 @@ function focusInput(index: number) {
     inputRefs.value[index]?.focus();
   }
 }
-provide('setIsProcessing', isProcessingMetadatas);
-provide('current', () => {
-  return R.ifElse(
-    R.isEmpty,
-    R.always(currentMetadatas.value.value),
-    (selections: string[]) => R.pick(selections, currentMetadatas.value)
-  )(selectedReferenceMeta.value)
-})
+
 </script>

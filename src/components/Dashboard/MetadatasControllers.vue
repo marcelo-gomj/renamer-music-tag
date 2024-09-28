@@ -40,18 +40,22 @@
 
 <script setup lang="ts">
 import { WandSparkles, Undo2 } from "lucide-vue-next"
-import { CurrentMetaSave } from "src/types/metas-type";
-import { inject, Ref, ref } from "vue";
+import { ref } from "vue";
 import * as R from "ramda";
 import { useNotification } from "../../stores/notifications";
 import { useModal } from "../../stores/modal";
-import { h, useId } from "vue";
+import { h } from "vue";
 import ErrorsDetailModalVue from "../ErrorsDetailModal.vue";
+import { useMedatas } from "@/stores/metadatas";
+import { storeToRefs } from "pinia";
+import { usePathSelection } from "@/stores/path-selections";
 
 const { editMusicMetadatas } = window.api.nodeID3;
 const isSavingMetadatas = ref(false);
 
-const current = inject<() => CurrentMetaSave>('current')
+const metadatas = useMedatas();
+const { pathSelections } = storeToRefs(usePathSelection());
+const { currentMetadatas } = storeToRefs(metadatas);
 const { notify } = useNotification(); 
 const { show, close } = useModal();
 
@@ -59,9 +63,16 @@ const tools = [
   { title: 'Tag generated', Icon: WandSparkles, handler: () => { } },
   { title: 'Reset metadatas', Icon: Undo2, handler: () => { } },
 ]
+
 async function handleClickProcessMetadatas(){
   isSavingMetadatas.value = true;
-  const { updates, errors } = await editMusicMetadatas(R.clone(current()));
+  const { updates, errors } = await editMusicMetadatas(
+    R.clone(
+      pathSelections.value.size ?
+      R.pick([...pathSelections.value.keys()], currentMetadatas.value) :
+      currentMetadatas.value
+    )
+  )
 
   if(R.length(updates)){
     notify({
