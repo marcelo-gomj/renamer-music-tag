@@ -1,42 +1,50 @@
 import { Tags } from "./tags";
-import { FieldUniqueValue } from "./vue-types";
+import { FieldValue } from "./vue-types";
 
-type TagPattern = {
+type PatternValue = {
   pattern: string,
   patternIndex : number | null,  
 }
 
-type KeyTag  = (keyof Tags | `pattern-${string}` | string)
-type PatternsMetadata = Record<KeyTag, TagPattern>
+type GenTagKey  = (keyof Tags | `pattern-${string}`)
 
-type MetadatasResult = {
-  metadatas : PatternsMetadata,
+type GenMetadatas = {
+  [ tags in GenTagKey] ?: PatternValue 
+};
+
+type GenMetadatasResult = {
+  metadatas : GenMetadatas,
   path: string,
   patterns: string[]
 }
 
 type TagTransformerFunction = (
-  index: number, regexPattern: string[] , patterns ?: PatternsMetadata
-) => Record<KeyTag, TagPattern>;
+  index: number, 
+  regexPattern: string[], 
+  patterns ?: GenMetadatas
+) => GenMetadatas;
 
 type MetaTransformerFunction = [
-  keyof Tags | string, RegExp, (TagTransformerFunction | null)
+  keyof Tags, 
+  RegExp, 
+  (TagTransformerFunction | null)
 ][];
 
-type MetaSaveValues = {
-  [ metakey in keyof Tags ] : FieldUniqueValue
-}
+type MetadataValues = {
+  [ tag in keyof Tags] ?: FieldValue 
+};
 
-type CurrentMetaSave = { 
-  [path: string] : MetaSaveValues
-} 
+type CurrentUserMetadatas = {
+  [path: string] : MetadataValues 
+};
 
 export {
   TagTransformerFunction,
   MetaTransformerFunction,
-  TagPattern,
-  PatternsMetadata,
-  MetadatasResult,
-  MetaSaveValues,
-  CurrentMetaSave,
+  PatternValue,
+  GenTagKey,
+  GenMetadatas,
+  GenMetadatasResult,
+  MetadataValues,
+  CurrentUserMetadatas,
 }

@@ -1,5 +1,5 @@
 import { FunctionalComponent, h } from "vue"
-import { MetaResult } from "./metas-type"
+import { GenMetadatasResult } from "./metas-type"
 import { Tags } from "./tags"
 
 export type SourceSelectProps = {
@@ -7,7 +7,7 @@ export type SourceSelectProps = {
   addSourceDir : (sourcePath: string[]) => void,
   updateMetaResults : (paths ?: string[]) => { 
     error: { name: string, pathErrors: string[]}, 
-    result: MetaResult[]
+    result: GenMetadatasResult[]
   } 
 }
 
@@ -35,10 +35,7 @@ export type FieldUniqueValue = {
   status: FieldTagStatus
 }
 
-
-export type InputProps = {
-  [tag in keyof Tags]: FieldValue
-}
+export type InputProps = Map<keyof Tags, FieldValue>;
 
 export type IndexPathTags <T> = { [path : string] : { [tag in keyof Tags]: T }};
 

@@ -1,13 +1,11 @@
 import NodeID3 from "node-id3";
 import * as R from "ramda";
-import { CurrentMetaSave, MetaResult } from "src/types/metas-type";
-import { MetaKeys } from "../../types/metas-type";
+import { CurrentUserMetadatas } from "src/types/metas-type";
 import { readFile } from "fs/promises"
 
-const editMusicMetadatas = async ( newMetadatas: CurrentMetaSave) => {
+const editMusicMetadatas = async ( newMetadatas: CurrentUserMetadatas) => {
   const updatedFiles = [];
   const errorFiles = [];
-
   for(const path in newMetadatas){
     const metadatas = newMetadatas[path];
     

@@ -1,22 +1,11 @@
-import { 
-  curry, splitAt, split, reduce, 
-  includes, last, join, flow, isEmpty, 
-  match, reduced, filter,
-  map, trim, 
-  hasIn,
-  compose,
-  isNotEmpty,
-  into,
-  isNotNil
-} from "ramda";
-
+import * as R from "ramda";
 import { checkSourceFolderFiles } from "./check-sources";
 import { 
-  MetadatasResult, MetaTransformerFunction, 
-  PatternsMetadata, TagTransformerFunction 
+  GenMetadatasResult, MetaTransformerFunction, 
+  GenMetadatas, TagTransformerFunction 
 } from "@/types/metas-type";
 
-const matcherWithFunction = curry(
+const matcherWithFunction = R.curry(
   (rgx: RegExp, tag: string, fn ?: TagTransformerFunction ) => (
   [tag, rgx, fn]
 ))
@@ -48,11 +37,11 @@ const formatsSupported = [
 ]
 
 const splitPathByExtension = (path: string) => {
-  const [filePath, extension] = split(/\.(?=\w+$)/ig, path);
-  const [folder, fileName] =  splitAt(-1, split('\\', filePath))
+  const [filePath, extension] = R.split(/\.(?=\w+$)/ig, path);
+  const [folder, fileName] =  R.splitAt(-1, R.split('\\', filePath))
   
   return [
-    join("\\", folder),
+    R.join("\\", folder),
     ...fileName, 
     extension
   ]
@@ -60,7 +49,7 @@ const splitPathByExtension = (path: string) => {
 
 const filterFormatsSupported = (formats: string[]) => (
   (pathProps : string[]) => (
-    includes(last(pathProps), formats) ? pathProps : []
+    R.includes(R.last(pathProps), formats) ? pathProps : []
   )
 )
 
@@ -69,7 +58,7 @@ const createExtraPattern = (
    pattern: string,
     index: number
 ) => {
-  return (isMetadataEmpty && match(/((?:\w+\W{0,1}\b)+)/ig, pattern).length) ?
+  return (isMetadataEmpty && R.match(/((?:\w+\W{0,1}\b)+)/ig, pattern).length) ?
   {['pattern-' + index] : { pattern, patternIndex: index }} 
   : null
 }
@@ -79,43 +68,47 @@ const reducePatterns = (
   transformers: typeof metaTransformers
 ) => 
 patterns.reduce(( metadatas, pattern, index) => {
-  const indexedMetadata = reduce((metadatasAcc, [tag, matchRegex, transformer]) => {
-    if(hasIn(tag, metadatas)) return metadatasAcc;
+  const indexedMetadata = R.reduce((metadatasAcc, [tag, matchRegex, transformer]) => {
+    if(R.hasIn(tag, metadatas)) return metadatasAcc;
 
-    const matchPattern = map(trim, match(matchRegex, pattern));
+    const matchPattern = R.map(R.trim, R.match(matchRegex, pattern));
     
     if(!matchPattern[0]) return metadatasAcc;
 
     if(transformer){
-      return reduced<PatternsMetadata>({
+      return R.reduced<GenMetadatas>({
         ...transformer(index, matchPattern, metadatas)
       })
     }
 
     metadatasAcc[tag] = { pattern: matchPattern[0], patternIndex: index };
 
-    return reduced<PatternsMetadata>(metadatasAcc)
-  }, {} as PatternsMetadata, transformers);
+    return R.reduced<GenMetadatas>(metadatasAcc)
+  }, {} as GenMetadatas, transformers);
 
   return ({
     ...metadatas,
     ...indexedMetadata,
-    ...createExtraPattern(isEmpty(indexedMetadata), pattern, index)
+    ...createExtraPattern(R.isEmpty(indexedMetadata), pattern, index)
   })
-}, {} as PatternsMetadata)
+}, {} as GenMetadatas)
 
-const cleanPatterns = into(
+const cleanPatterns = R.into(
   [],
-  compose(filter(isNotNil), map(trim), filter(isNotEmpty))
+  R.compose(
+    R.filter(R.isNotNil), 
+    R.map(R.trim), 
+    R.filter(R.isNotEmpty)
+  )
 )
 
 const generateMetadatas = (transformers : typeof metaTransformers) => (
   pathSplited : string[]
-) : MetadatasResult[] => {
-  if(isEmpty(pathSplited)) return [];
+) : GenMetadatasResult[] => {
+  if(R.isEmpty(pathSplited)) return [];
   
   const [ folder, filename, extension ] = pathSplited;
-  const splitedPattterns = split(
+  const splitedPattterns = R.split(
     /((?:DISC|VOL).?.?\d+)|(?:-)|(?=(?=part|ft|feat|dj|ep)\.?\w+.+\w+?)|(\d+(?:\.\d+)?)|(?:(\(|\)|\[|\]))/ig,
     filename
   )
@@ -129,9 +122,9 @@ const generateMetadatas = (transformers : typeof metaTransformers) => (
   }]
 }
 
-const reducePathMetadatas = reduce(
-  (results : MetadatasResult[], path : string) => (
-    [ ...results, ...flow(path, [
+const reducePathMetadatas = R.reduce(
+  (results : GenMetadatasResult[], path : string) => (
+    [ ...results, ...R.flow(path, [
       splitPathByExtension,
       filterFormatsSupported(formatsSupported),
       generateMetadatas(metaTransformers)
@@ -144,7 +137,7 @@ const generateMetadatasByPaths = async (paths: string[]) => {
 
   return { 
     results: reducePathMetadatas([], filePaths), 
-    errorPaths : ['fef']
+    errorPaths
   }
 }
 
