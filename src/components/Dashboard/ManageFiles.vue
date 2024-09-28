@@ -1,5 +1,5 @@
 <template>
-  <div :class="`flex gap-4 relative group select-none flex-col ${metas ? 'w-[50%]' : 'w-full'} overflow-y-hidden h-full`">
+  <div :class="`flex gap-4 relative group select-none flex-col w-full overflow-y-hidden h-full`">
     <div class="flex gap-2 flex-col h-full overflow-y-hidden">
       <div
         v-if="sourceDirectory" 
@@ -24,25 +24,25 @@
             class="`z-50 h-full overflow-y-scroll custom-scrollbar `"
           >
             <div class="space-y-1">
-              <div v-for="meta of metadatasGenereted"
+              <div v-for="{ path } of metadatasGenereted"
                 :class="`relative group/files  mr-1 rounded-[0.25rem] z-[999] hover:text-base-white-200 text-x1 font-medium cursor-pointer hover:bg-base-dark-300 ${ 
-                isPathSelected(meta.path) ? 'text-base-white-300' : 'text-base-white-700'
+                isPathSelected(path) ? 'text-base-white-300' : 'text-base-white-700'
                 }`"
               >
                 <div class="flex items-center"
                 >
                   <div
-                    :class="`group-hover/files:visible h-full py-[0.35rem] px-2 ${ isPathSelected(meta.path) ? 'visible' : 'invisible'}`"
-                    @click=" _ => handleSelectFile(meta.path)"
+                    :class="`group-hover/files:visible h-full py-[0.35rem] px-2 ${ isPathSelected(path) ? 'visible' : 'invisible'}`"
+                    @click=" _ => selectPath(path)"
                   >
-                    <component class="size-[1.2rem]" :is="isPathSelected(meta.path) ? CircleCheck : Circle" />
+                    <component class="size-[1.2rem]" :is="isPathSelected(path) ? CircleCheck : Circle" />
                   </div>
                   
                   <div 
                     class="line-clamp-1 w-full py-[0.35rem] pr-2"
-                    @click="_ => handleUniqueSelect(meta.path)"
+                    @click="_ => selectOnePath(path)"
                   >
-                    {{ R.last(R.split('\\', meta.path)) }}
+                    {{ R.last(R.split('\\', path)) }}
                   </div>
                 </div>
               </div>
@@ -77,43 +77,25 @@
 import { inject, Ref, ref, watch } from "vue";
 import ToolsMenu from "../Dashboard/ToolsMenu.vue";
 import { ChevronDown, FolderSearch, CircleCheck, Circle, Eye, EyeOff } from 'lucide-vue-next';
-import { MetaResult } from "src/types/metas-type";
 import * as R from "ramda";
 import { useMedatas } from "@/stores/metadatas";
 import { storeToRefs } from "pinia";
+import { usePathSelection } from "@/stores/path-selections";
 
 
 const openListMusics = ref(true);
 const metadatas = useMedatas();
 const { sourceDirectory, metadatasGenereted } = storeToRefs(metadatas);
-const currentReferencesMeta = inject<Ref<string[]>>("currentReferencesMeta");
-
+const usePaths = usePathSelection();
+const { pathSelections } = storeToRefs(usePaths);
+const { selectPath, selectOnePath, isPathSelected } = usePaths;
 
 async function selectFolderSource(){
   const paths = await window.api.explorer.selectMusicsSources(["openDirectory"]);
   // addSourceDir(paths)
 } 
 
-const [{}, {}] = R.juxt([storeToRefs, R.identity])(useMedatas())
-const metas = inject<MetaResult[]>('referenceFiles');
-
 function toggleFilesMusicList() {
   openListMusics.value = !openListMusics.value;
-}
-
-function handleSelectFile(path: string){
-  currentReferencesMeta.value = R.ifElse(
-    R.includes(path),
-    R.without([path]),
-    R.append(path)
-  )(currentReferencesMeta.value)
-}
-
-function handleUniqueSelect(path : string){
-  currentReferencesMeta.value = [path]
-}
-
-function isPathSelected(path: string){
-  return R.includes(path, currentReferencesMeta.value);
 }
 </script>
