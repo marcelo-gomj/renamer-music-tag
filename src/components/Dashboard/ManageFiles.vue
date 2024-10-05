@@ -42,7 +42,7 @@
                     class="line-clamp-1 w-full py-[0.35rem] pr-2"
                     @click="_ => selectOnePath(path)"
                   >
-                    {{ R.last(R.split('\\', path)) }}
+                    {{ R.last(R.split(/[\\|/]/ig, path)) }}
                   </div>
                 </div>
               </div>

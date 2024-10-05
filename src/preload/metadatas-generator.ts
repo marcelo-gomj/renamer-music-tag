@@ -1,5 +1,6 @@
 import * as R from "ramda";
 import { checkSourceFolderFiles } from "./check-sources";
+import { sep } from 'path'
 import { 
   GenMetadatasResult, MetaTransformerFunction, 
   GenMetadatas, TagTransformerFunction 
@@ -38,10 +39,10 @@ const formatsSupported = [
 
 const splitPathByExtension = (path: string) => {
   const [filePath, extension] = R.split(/\.(?=\w+$)/ig, path);
-  const [folder, fileName] =  R.splitAt(-1, R.split('\\', filePath))
+  const [folder, fileName] =  R.splitAt(-1, R.split(sep, filePath))
   
   return [
-    R.join("\\", folder),
+    R.join(sep, folder),
     ...fileName, 
     extension
   ]
@@ -116,7 +117,7 @@ const generateMetadatas = (transformers : typeof metaTransformers) => (
   const patterns = cleanPatterns(splitedPattterns); 
 
   return [{
-    path: folder + '\\' + filename + '.' + extension,
+    path: `${folder}${sep}${filename}.${extension}`,
     metadatas: reducePatterns(patterns, transformers),
     patterns
   }]

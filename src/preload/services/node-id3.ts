@@ -33,7 +33,8 @@ const readMusicMetadatas = async ( filePaths: string[] ) => {
       const metadatas = await NodeID3.Promise.read(fileBuffer);
       
       fileSourceMetadatas = [...fileSourceMetadatas, { metadatas, path }];
-    }catch(_){
+    }catch(err){
+      console.log(err)
       pathErrors = [...pathErrors, path];
     }
   }
