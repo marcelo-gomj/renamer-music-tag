@@ -75,4 +75,9 @@ export type ReducePatternsObject = {
   patterns : ReferencePatterns
 }
 
-export type PatternList = (string | { tagName: GenTagKey, icon?: any,  label?: string,  })[]  
+export type PatternList = ({ 
+  tagName: GenTagKey | string,
+  isTag : boolean,
+  icon?: any,  
+  label?: string 
+})[] 

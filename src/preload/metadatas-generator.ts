@@ -109,7 +109,7 @@ const generateMetadatas = (transformers : typeof metaTransformers) => (
   
   const [ folder, filename, extension ] = pathSplited;
   const splitedPattterns = R.split(
-    /((?:DISC|VOL).?.?\d+)|(?:-)|(?=(?=part|ft|feat|dj|ep)\.?\w+.+\w+?)|(\d+(?:\.\d+)?)|(?:(\(|\)|\[|\]))/ig,
+    /((?:DISC|VOL).?.?\d+)|([-|\|_|\\|\/])|(?=(?=part|ft|feat|dj|ep)\.?\w+.+\w+?)|(\d+(?:\.\d+)?)|(?:(\(|\)|\[|\]))/ig,
     filename
   )
 

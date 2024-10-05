@@ -6,14 +6,14 @@
       <div class="flex flex-wrap font-medium gap-x-2 gap-y-4 pr-4 w-full my-1 min-h-[2.2rem]">
         <div 
           v-if="metadatasGenereted" 
-          v-for="(pattern, index) in currentPattern" 
-          :key="(R.is(String, pattern) ? pattern : pattern.tagName) + index "
-          :class="`flex tracking-wide items-center select-none group gap-4 ${'pl-5 pr-6 rounded-full cursor-pointer text-x1 bg-base-dark-400 hover:bg-base-dark-600 shadow-[2px_2px_20px] shadow-base-dark-200'}`"
+          v-for="({ isTag, icon, tagName, label }, index) in currentPattern" 
+          :key="(tagName + index)"
+          :class="`flex tracking-wide items-center select-none group gap-4 cursor-pointer ${ isTag ? 'pl-5 pr-6 rounded-full text-x1 bg-base-dark-400 hover:bg-base-dark-600 shadow-[2px_2px_20px] shadow-base-dark-200' : 'cursor-pointer px-2'}`"
         >
 
-          <component :is="R.is(String, pattern) ? '' : pattern.icon" class="w-[1rem] h-[1rem]" />
+          <component :is="icon" class="w-[1rem] h-[1rem]" />
 
-          <div class="leading-[1]">{{ R.is(String, pattern) ? pattern : (pattern.label || pattern.tagName)}}
+          <div class="leading-[1]">{{ label }}
           </div>
         </div>
         <div v-else class="flex justify-between rounded-lg h-full flex-col w-full ">
@@ -36,7 +36,7 @@ import { usePathSelection } from '@/stores/path-selections';
 
 type ReducedPairsPattern = [string, number];
 
-const { metadatasGenereted, currentMetadatas } = storeToRefs(useMedatas());
+const { metadatasGenereted } = storeToRefs(useMedatas());
 const { pathSelections } = storeToRefs(usePathSelection());
 
 const pathReferences = ref<ReferencePathsPattern>({})
@@ -77,13 +77,9 @@ function watchReferenceMetadatas(metadatasGenereted: GenMetadatasResult[]) {
 
   pathReferences.value = pathIndexedByPatterns;
   patternReferences.value = patterns;
-  // currentPattern.value = getPatternWithMostFrequence(pathIndexedByPatterns);
   const popularPattern =  getPatternWithMostFrequence(pathIndexedByPatterns) as GenTagKey;
-  currentPattern.value = patterns[popularPattern];
+  currentPattern.value = mappingTagPattern(patterns[popularPattern]);
 }
-
-
-
 
 const METADATAS: { [key in GenTagKey] ?: { label: string, icon: typeof Music2 } } = {
   "trackNumber": { label: "Faixa", icon: Music2 },
@@ -96,20 +92,28 @@ const METADATAS: { [key in GenTagKey] ?: { label: string, icon: typeof Music2 } 
   "performerInfo": { label: 'Artistas', icon: Users }
 }
 
+const mappingTagPattern = R.map((tagName: (GenTagKey| string)) : PatternList[0] => {
+  const prop = METADATAS[tagName as GenTagKey];
+  return ({
+    tagName,
+    isTag: R.isNotNil(prop?.label),
+    icon: prop?.icon,
+    label: prop?.label || tagName
+})})
+
 function watchPathsReferece(paths: Set<string>){
   const pathsArray = [...paths.keys()];
   
   if(paths.size === 1){
     const meta = R.find( meta => meta.path === pathsArray[0] , metadatasGenereted.value);
-    console.log(meta)
     
-    currentPattern.value = R.reduce((patterns, [tagName, { patternIndex }]) => (
-      R.update(patternIndex, { tagName, ...METADATAS[tagName] }, patterns)
-    ),
-      meta.patterns as PatternList,
+    const patternKeys = R.reduce(
+        (patterns, [tag, { patternIndex }]) => R.update(patternIndex, tag, patterns), 
+        meta.patterns, 
       R.toPairs(meta.metadatas)
     )
-      
+
+    currentPattern.value = mappingTagPattern(patternKeys)
     return;
   }
   
@@ -119,10 +123,7 @@ function watchPathsReferece(paths: Set<string>){
   );
 
   const patternKey = getPatternWithMostFrequence(refs) as GenTagKey;
-  currentPattern.value =  R.map( tagName => ({ 
-    tagName,
-     ...METADATAS[tagName]}
-    ), patternReferences.value[patternKey] || [])
+  currentPattern.value = mappingTagPattern(patternReferences.value[patternKey] || [])
 }
 
 watch(metadatasGenereted, watchReferenceMetadatas);
