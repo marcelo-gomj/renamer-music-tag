@@ -26,7 +26,6 @@ export const useNotification = defineStore('notifications', () => {
     //animation for previous notifications
     setTimeout(() => {
       notifications.value = [ notificationProps, lastNotification];
-      console.log(notifications.value)
     }, 200)
   }
 
