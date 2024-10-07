@@ -25,7 +25,7 @@
           >
             <div class="space-y-1">
               <div v-for="{ path } of metadatasGenereted"
-                :class="`relative group/files  mr-1 rounded-[0.25rem] z-[999] hover:text-base-white-200 text-x1 font-medium cursor-pointer hover:bg-base-dark-300 ${ 
+                :class="`relative group/files  mr-1 rounded-[0.25rem] z-[500] hover:text-base-white-200 text-x1 font-medium cursor-pointer hover:bg-base-dark-300 ${ 
                 isPathSelected(path) ? 'text-base-white-300' : 'text-base-white-700'
                 }`"
               >
