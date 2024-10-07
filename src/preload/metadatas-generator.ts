@@ -39,7 +39,7 @@ const formatsSupported = [
 
 const splitPathByExtension = (path: string) => {
   const [filePath, extension] = R.split(/\.(?=\w+$)/ig, path);
-  const [folder, fileName] =  R.splitAt(-1, R.split(sep, filePath))
+  const [folder, fileName] =  R.splitAt(-1, R.split(/[\\|/]/ig, filePath))
   
   return [
     R.join(sep, folder),
