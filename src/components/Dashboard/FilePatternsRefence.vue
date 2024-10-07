@@ -7,17 +7,14 @@
         <div 
           v-if="metadatasGenereted" 
           v-for="({ isTag, icon, tagName, label }, index) in currentPattern" 
+          @click=""
           :key="(tagName + index)"
           :class="`flex tracking-wide items-center select-none group gap-4 cursor-pointer ${ isTag ? 'pl-5 pr-6 rounded-full text-x1 bg-base-dark-400 hover:bg-base-dark-600 shadow-[2px_2px_20px] shadow-base-dark-200' : 'cursor-pointer px-2'}`"
         >
 
           <component :is="icon" class="w-[1rem] h-[1rem]" />
 
-          <div class="leading-[1]">{{ label }}
-          </div>
-        </div>
-        <div v-else class="flex justify-between rounded-lg h-full flex-col w-full ">
-          <div class="opacity-30 py-1 px-4"></div>
+          <div class="leading-[1]">{{ label }}</div>
         </div>
       </div>
     </div>
@@ -25,7 +22,7 @@
 </template>
 
 <script setup lang="ts">
-import { Music2, Captions, Disc, CalendarIcon, Tag, LucideUsers, Users } from 'lucide-vue-next';
+import { Music2, Captions, Disc, CalendarIcon, Tag, LucideUsers, Users, Grid2X2 } from 'lucide-vue-next';
 import * as R from "ramda";
 import { useMedatas } from '@/stores/metadatas';
 import { storeToRefs } from 'pinia';
@@ -93,13 +90,18 @@ const METADATAS: { [key in GenTagKey] ?: { label: string, icon: typeof Music2 } 
 }
 
 const mappingTagPattern = R.map((tagName: (GenTagKey| string)) : PatternList[0] => {
-  const prop = METADATAS[tagName as GenTagKey];
+
+  const prop = R.includes('pattern', tagName) ?
+  { label: tagName, icon: Grid2X2 } : 
+  METADATAS[tagName as GenTagKey];
+  
   return ({
     tagName,
     isTag: R.isNotNil(prop?.label),
     icon: prop?.icon,
     label: prop?.label || tagName
-})})
+  })
+})
 
 function watchPathsReferece(paths: Set<string>){
   const pathsArray = [...paths.keys()];
@@ -127,5 +129,5 @@ function watchPathsReferece(paths: Set<string>){
 }
 
 watch(metadatasGenereted, watchReferenceMetadatas);
-watch(pathSelections, watchPathsReferece, { deep : true});
+watch(pathSelections, watchPathsReferece, { deep : true });
 </script>
