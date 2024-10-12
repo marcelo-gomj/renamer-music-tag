@@ -22,7 +22,6 @@ const createWindow = () => {
     },
   });
 
-
   // and load the index.html of the app.
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
@@ -63,3 +62,4 @@ ipcMain.handle('open-dialog', async (_, properties: OpenDialogOptions["propertie
   const result = await dialog.showOpenDialog({properties : ["multiSelections", ...properties]});
   return result.filePaths
 })
+
