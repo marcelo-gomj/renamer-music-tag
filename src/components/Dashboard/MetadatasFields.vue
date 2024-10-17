@@ -107,8 +107,8 @@ const notifications = useNotification();
 const { updateSource, updateByPathReference } = metadatas;
 
 const tagList: (keyof Tags)[] = [
-  'album', 'artist', 'title', 'trackNumber',
-  'genre', 'year', 'partOfSet', 'date',
+  'trackNumber', 'title', 'artist', 'album', 
+  'year', 'genre', 'partOfSet', 'date',
   'publisher', 'copyright', 'performerInfo'
 ]
 
@@ -201,7 +201,6 @@ function createDefaultInputFields(
   ) return;
 
   const { tagValue: inputValue, status: inputStatus } = inputValues.value.get(tag);
-
 
   if (
     inputValue === '' ||
@@ -330,7 +329,11 @@ function checkFieldInputkAvailability(fieldValue: string): boolean {
 }
 
 // watch(metadatasGenereted, watchSelectFilesChange);
-watch([pathSelections, metadatasGenereted], watchSelectFilesChange, { deep: true });
+watch([
+  pathSelections, 
+  metadatasGenereted,
+  currentMetadatas
+], watchSelectFilesChange, { deep: true });
 watch(isOpenAllMetadatas, watchOriginalMetadatas);
 
 function handleShowUpAllMetadatas() {

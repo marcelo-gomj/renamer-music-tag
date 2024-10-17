@@ -5,7 +5,7 @@
         v-if="pathSelections.size !== 1"
         class="flex gap-8 items-center"
       >
-        <div class="font-medium text-x1">Padrão {{ R.toPairs(currentPattern.patternProps)}}</div>
+        <div class="font-medium text-x1">Padrão {{ currentPattern?.patternKey || 'Variado' }}</div>
   
         <div class="relative select-none">
           <div 
@@ -94,11 +94,18 @@
 </template>
 
 <script setup lang="ts">
-import { Music2, Captions, Disc, ChevronDown, CalendarIcon, User, Tag, TrashIcon, Undo2, Users, Grid2X2 } from 'lucide-vue-next';
+import { 
+  Music2, Captions, Disc, ChevronDown,
+  CalendarIcon, User, Tag, TrashIcon, 
+  Undo2, Users, Grid2X2 
+} from 'lucide-vue-next';
 import * as R from "ramda";
 import { useMedatas } from '@/stores/metadatas';
 import { storeToRefs } from 'pinia';
-import { PatternList, ReducePatternsObject, ReferencePathsPattern, ReferencePatterns } from '@/types/vue-types'
+import { 
+  PatternList, ReducePatternsObject, 
+  ReferencePathsPattern, ReferencePatterns 
+} from '@/types/vue-types'
 import { ref, watch } from 'vue';
 import { GenMetadatasResult, GenTagKey } from '@/types/metas-type';
 import { usePathSelection } from '@/stores/path-selections';
@@ -164,8 +171,7 @@ function watchReferenceMetadatas(metadatasGenereted: GenMetadatasResult[]) {
 
   pathReferences.value = pathIndexedByPatterns;
   patternReferences.value = patterns;
-  const popularPattern = getPatternWithMostFrequence(pathIndexedByPatterns) as GenTagKey;
-  currentPattern.value =  mappingTagPattern(patterns, popularPattern);
+  watchPathsReferece(pathSelections.value)
 }
 
 function activeContextOptions(tagIndex: number) {
@@ -200,32 +206,79 @@ const ACTIONS_CONTEXT = [
   { key: 'delete', label: 'Apagar', actionIcon: TrashIcon, action: () => { } },
 ]
 
+function referenceByUniquePath(pathsArray: string[]){
+  const meta = R.find(meta => meta.path === pathsArray[0], metadatasGenereted.value);
+
+  const patternKeys = R.reduce(
+    (patterns, [tag, { patternIndex }]) => R.update(patternIndex, tag, patterns),
+    meta.patterns,
+    R.toPairs(meta.metadatas)
+  )
+
+  currentPattern.value =  mappingTagPattern(patternKeys);
+}
+
+const reorderArray = (originalArray: string[], tagsOrder: string[]) => {
+  const isPatternIndex = R.includes('pattern');
+
+  const preservedPatternIndexes = R.addIndex<string, { item: string, index: number } | null>(R.map)((item, index) => 
+    isPatternIndex(item) ? { index, item } : null, 
+    originalArray
+  ).filter((x): x is { item: string, index: number} => x !== null);
+
+  const orderedItems : string[] = R.pipe(
+    R.filter<string>(R.complement(isPatternIndex)),
+    R.sort((itemA, itemB) => R.indexOf(itemA, tagsOrder) - R.indexOf(itemB, tagsOrder)) 
+  )(originalArray);
+
+  const resultArray : string[] = R.addIndex(R.reduce)((acc : string[], item, index: number) => {
+    const patternItem  = R.find( pattern => pattern.index === index, preservedPatternIndexes);
+    return patternItem ? R.append(patternItem.item, acc) : R.append(orderedItems.shift(), acc);
+  }, [], originalArray);
+
+  return resultArray;
+};
+
 function watchPathsReferece(paths: Set<string>) {
+  console.log("PATHS", paths)
   swapContextActive.value = null;
-  const pathsArray = [...paths.keys()];
+  const pathsArray = paths.size === 0 ? metadatasGenereted.value.map(item => item.path) :  [...paths.keys()];
 
   if (paths.size === 1) {
-    const meta = R.find(meta => meta.path === pathsArray[0], metadatasGenereted.value);
+    referenceByUniquePath(pathsArray);
+    return;
+  }
+  
+  const uniquePatterns = R.into([], R.compose(
+      R.map((path: string) => pathReferences.value[path]),
+      R.uniq<string>
+    ),
+    pathsArray 
+  )
+  const isUniquePattern = R.length(uniquePatterns) === 1;
 
-    const patternKeys = R.reduce(
-      (patterns, [tag, { patternIndex }]) => R.update(patternIndex, tag, patterns),
-      meta.patterns,
-      R.toPairs(meta.metadatas)
-    )
-
-    currentPattern.value =  mappingTagPattern(patternKeys);
+  if(isUniquePattern){
+    currentPattern.value = mappingTagPattern(patternReferences.value, uniquePatterns[0]);
     return;
   }
 
-  const refs = R.pick(
-    pathsArray.length === 0 ? R.keys(pathReferences.value) : pathsArray,
-    pathReferences.value
-  );
+  const patternsArray = R.map( patternKey => patternReferences.value[patternKey], uniquePatterns); 
+  const patterns = R.reduce(
+    R.union, 
+    [], 
+    patternsArray
+  ) as string[]
 
-  const patternKey = getPatternWithMostFrequence(refs) as GenTagKey;
-  currentPattern.value = mappingTagPattern(patternReferences.value, patternKey);
+  currentPattern.value = mappingTagPattern(
+    reorderArray(patterns, [
+    'trackNumber', 'title', 'artist', 'album', 
+    'year', 'genre', 'partOfSet', 'date',
+    'publisher', 'copyright', 'performerInfo'
+    ])
+  )
 }
 
+// genarete initial patterns
 watch(metadatasGenereted, watchReferenceMetadatas);
 watch(pathSelections, watchPathsReferece, { deep: true });
 </script>
