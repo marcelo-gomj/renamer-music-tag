@@ -5,7 +5,7 @@
         v-if="pathSelections.size !== 1"
         class="flex gap-8 items-center"
       >
-        <div class="font-medium text-x1">Padrão {{ currentPattern?.patternKey || 'Variado' }}</div>
+        <div class="font-medium text-x1">Referencia padrão {{ currentPattern?.patternKey ? findIndexPattern(currentPattern.patternKey) : 'Variado' }}</div>
   
         <div class="relative select-none">
           <div 
@@ -24,11 +24,13 @@
             <div class="w-auto">
               <div 
                 v-for="([patternKey, patterns], index) of R.toPairs(patternReferences)"
+                @click="() => handleSelectPattern(patternKey)"
+
                 :class="`flex relative items-center gap-5 text-x2 font-medium cursor-pointer rounded-md hover:bg-base-dark-500 text-base-white-500`"
               >
-                <div class="space-y-0.5 py-2.5 pl-5 pr-3 ">
+                <div class="space-y-0.5 py-2.5 pl-5 pr-3">
                   <div v-show="currentPattern.patternKey === patternKey" 
-                    class="w-[3px] py-3 h-[75%] rounded-full bg-white absolute left-1.5"  
+                    class="w-[3px] py-3 h-[75%] rounded-full bg-white absolute left-1"  
                   ></div>
                   <div class="font-bold shrink-0 pt-1 pb-3 leading-[0]">Padrão {{ index + 1 }}</div>
   
@@ -80,8 +82,11 @@
               </div>
             </div>
 
-            <div v-for="{ label: sublabel, icon } in METADATAS" v-show="sublabel !== label"
-              class="flex items-center gap-6 w-52 px-5 py-2 rounded-lg hover:bg-base-dark-700">
+            <div 
+              v-for="{ label: sublabel, icon } in METADATAS" 
+              v-show="sublabel !== label"
+              class="flex items-center gap-6 w-52 px-5 py-2 rounded-lg hover:bg-base-dark-700"
+            >
               <component :is="icon" class="size-4" />
               <div>{{ sublabel }}</div>
             </div>
@@ -113,7 +118,9 @@ import { usePathSelection } from '@/stores/path-selections';
 type ReducedPairsPattern = [string, number];
 
 const { metadatasGenereted } = storeToRefs(useMedatas());
-const { pathSelections } = storeToRefs(usePathSelection());
+const usePaths = usePathSelection();
+const { pathSelections } = storeToRefs(usePaths);
+const { selectPath } = usePaths;
 
 const pathReferences = ref<ReferencePathsPattern>({})
 const patternReferences = ref<ReferencePatterns>({})
@@ -188,6 +195,19 @@ function handleTogglePatternList(){
 
 function handlePatternListLeave(){
   isOpenPatternList.value = false;
+}
+
+function handleSelectPattern(patternKey: string){
+  currentPattern.value = mappingTagPattern(patternReferences.value, patternKey);
+  const paths = R.filter(([_, key]) => key === patternKey,
+    R.toPairs(pathReferences.value)
+  )
+
+  pathSelections.value.clear()
+  paths.forEach(([path]) => {
+    selectPath(path)
+  })
+
 }
 
 const METADATAS: { [key in GenTagKey]?: { label: string, icon: typeof Music2 } } = {
@@ -276,6 +296,10 @@ function watchPathsReferece(paths: Set<string>) {
     'publisher', 'copyright', 'performerInfo'
     ])
   )
+}
+
+function findIndexPattern(patternKey: string){
+  return R.findIndex( data => data === patternKey, R.keys(patternReferences.value)) + 1
 }
 
 // genarete initial patterns
