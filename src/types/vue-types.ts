@@ -81,3 +81,5 @@ export type PatternList = ({
   icon?: any,  
   label?: string 
 })[] 
+
+export type CurrentPatternReference = { patternKey: string, patternProps: PatternList }

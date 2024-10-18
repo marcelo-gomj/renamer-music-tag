@@ -1,58 +1,34 @@
 <template>
   <div class="w-full">
-    <div  class="h-9">
+    <div class="h-12">
       <div 
         v-if="pathSelections.size !== 1"
         class="flex gap-8 items-center"
       >
-        <div class="font-medium text-x1">Referencia padrão {{ currentPattern?.patternKey ? findIndexPattern(currentPattern.patternKey) : 'Variado' }}</div>
+        <div class="font-medium text-x1 w-48">Referência padrão {{ currentPattern?.patternKey ? findIndexPattern(currentPattern.patternKey) : 'Variado' }}</div>
   
         <div class="relative select-none">
           <div 
-            class="flex group items-center gap-4 text-x1 h-9 text-base-white-500 font-medium hover:to-base-white-700 cursor-pointer"
+            class="flex group items-center gap-4 text-x1 h-12 text-base-white-500 font-medium hover:to-base-white-700 cursor-pointer"
             @click="handleTogglePatternList"
           >
             <div class="leading-[0]">Mostrar outros padrões</div>
-            <chevron-down class="group-hover:visible invisible size-5" />
+            <chevron-down :class="`size-5 ${ isOpenPatternList ? 'rotate-180' : ''}`" />
           </div>
     
-          <div 
-            v-show="isOpenPatternList" 
-            class="absolute flex -left-2 mt-2 top-full p-2 border-[1px] border-base-dark-850 rounded-lg bg-base-dark-200 z-[900]"
-            @mouseleave="handlePatternListLeave"
-          >
-            <div class="w-auto">
-              <div 
-                v-for="([patternKey, patterns], index) of R.toPairs(patternReferences)"
-                @click="() => handleSelectPattern(patternKey)"
-
-                :class="`flex relative items-center gap-5 text-x2 font-medium cursor-pointer rounded-md hover:bg-base-dark-500 text-base-white-500`"
-              >
-                <div class="space-y-0.5 py-2.5 pl-5 pr-3">
-                  <div v-show="currentPattern.patternKey === patternKey" 
-                    class="w-[3px] py-3 h-[75%] rounded-full bg-white absolute left-1"  
-                  ></div>
-                  <div class="font-bold shrink-0 pt-1 pb-3 leading-[0]">Padrão {{ index + 1 }}</div>
-  
-                  <div class="flex gap-4 shrink-0">
-                    <div 
-                      v-for="tag in patterns"
-                      class="flex shrink-0 justify-center items-center gap-1 flex-col"
-                    >
-                      <div class="text-x1">{{ METADATAS[tag]?.label}}</div>
-                      <component class="size-3.5" :is="METADATAS[tag]?.icon"  />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <pattern-options 
+            :current-pattern="currentPattern"
+            :handle-pattern-list-leave="handlePatternListLeave"
+            :is-open-pattern-list="isOpenPatternList"
+            :pattern-references="patternReferences"
+            :handle-select-pattern="handleSelectPattern"
+          />
         </div>
       </div>
 
       <div
         v-else
-        class="flex items-center h-9 gap-8 text-x1 font-medium "
+        class="flex items-center h-12 gap-8 text-x1 font-medium "
       >
         <div>Referência ao arquivo:</div>
         <div 
@@ -61,40 +37,12 @@
       </div>
     </div>
 
-    <div class="flex flex-wrap font-medium gap-x-2 gap-y-4 pr-4 w-full mt-2 min-h-[2.2rem]">
-      <div 
-        v-show="metadatasGenereted.length" 
-        v-for="({ isTag, icon, tagName, label }, index) in currentPattern?.patternProps"
-        @click="() => activeContextOptions(index)" 
-        @mouseleave="handleLeaveContextOptions" 
-        :key="(tagName + index)"
-        :class="`flex relative tracking-wide items-center select-none group text-x1 gap-4 cursor-pointer ${isTag ? `${index === swapContextActive ? 'bg-base-dark-700' : ''} pl-5 pr-6 rounded-full bg-base-dark-400 shadow-[2px_2px_20px] shadow-base-dark-200` : `${index === swapContextActive ? 'border-green-500' : ''} border-2 rounded-full border-[transparent] cursor-pointer px-2`}`"
-      >
-        <component :is="icon" class="w-[1rem] h-[1rem]" />
-        <div :class="`leading-[1] ${isTag ? '' : 'font-bold'}`">{{ label }}</div>
-
-        <div class="absolute top-full left-0 z-[999]">
-          <div class="rounded-xl mt-2 bg-base-dark-250  p-2" v-show="index === swapContextActive">
-            <div class="flex gap-6 px-4 pt-1 pb-3 mb-1 border-base-dark-600 border-b-2">
-              <div v-for="{ actionIcon, key, label, action } in ACTIONS_CONTEXT" :key="key" :title="label"
-                @click="action">
-                <component class="size-5" :is="actionIcon" />
-              </div>
-            </div>
-
-            <div 
-              v-for="{ label: sublabel, icon } in METADATAS" 
-              v-show="sublabel !== label"
-              class="flex items-center gap-6 w-52 px-5 py-2 rounded-lg hover:bg-base-dark-700"
-            >
-              <component :is="icon" class="size-4" />
-              <div>{{ sublabel }}</div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </div>
+    <tag-context 
+      :active-context-options="activeContextOptions"
+      :current-pattern="currentPattern"
+      :swap-context-active="swapContextActive"
+      :handle-leave-context-options="handleLeaveContextOptions"
+    />
   </div>
 </template>
 
@@ -108,14 +56,16 @@ import * as R from "ramda";
 import { useMedatas } from '@/stores/metadatas';
 import { storeToRefs } from 'pinia';
 import { 
+  CurrentPatternReference,
   PatternList, ReducePatternsObject, 
   ReferencePathsPattern, ReferencePatterns 
 } from '@/types/vue-types'
 import { ref, watch } from 'vue';
 import { GenMetadatasResult, GenTagKey } from '@/types/metas-type';
 import { usePathSelection } from '@/stores/path-selections';
-
-type ReducedPairsPattern = [string, number];
+import TagContext from './TagContext.vue';
+import PatternOptions from './PatternOptions.vue';
+import { METADATAS } from '../constants/metadatas';
 
 const { metadatasGenereted } = storeToRefs(useMedatas());
 const usePaths = usePathSelection();
@@ -124,19 +74,9 @@ const { selectPath } = usePaths;
 
 const pathReferences = ref<ReferencePathsPattern>({})
 const patternReferences = ref<ReferencePatterns>({})
-const currentPattern = ref<{ patternKey: string, patternProps: PatternList }>();
+const currentPattern = ref<CurrentPatternReference>();
 const swapContextActive = ref<number | null>(null);
 const isOpenPatternList = ref(false);
-
-const getPatternWithMostFrequence = (pathsObj: ReferencePathsPattern) => R.pipe(
-  R.countBy(R.identity<string>),
-  R.toPairs,
-  R.reduce<ReducedPairsPattern, ReducedPairsPattern>(
-    (a, b) => (a[1] > b[1] ? a : b),
-    ['', 0]
-  ),
-  R.head
-)(R.values(pathsObj)) as string;
 
 const mappingTagPattern = (patterns: ReferencePatterns | string[], patternKey?: string) => ({
   patternKey,
@@ -197,34 +137,23 @@ function handlePatternListLeave(){
   isOpenPatternList.value = false;
 }
 
-function handleSelectPattern(patternKey: string){
+function handleSelectPattern(patternKey: string | undefined){
+  pathSelections.value.clear()
+
+  if(!patternKey){
+    watchPathsReferece(pathSelections.value)
+    return;
+  }
+
   currentPattern.value = mappingTagPattern(patternReferences.value, patternKey);
   const paths = R.filter(([_, key]) => key === patternKey,
     R.toPairs(pathReferences.value)
   )
 
-  pathSelections.value.clear()
   paths.forEach(([path]) => {
     selectPath(path)
   })
-
 }
-
-const METADATAS: { [key in GenTagKey]?: { label: string, icon: typeof Music2 } } = {
-  "trackNumber": { label: "Faixa", icon: Music2 },
-  "title": { label: "Título", icon: Captions },
-  "album": { label: "Álbum", icon: Disc },
-  "artist": { label: "Artista", icon: User },
-  "partOfSet": { label: "Volume do disco ", icon: Disc },
-  "year": { label: 'Ano', icon: CalendarIcon },
-  "genre": { label: 'Genêro', icon: Tag },
-  "performerInfo": { label: 'Artistas', icon: Users }
-}
-
-const ACTIONS_CONTEXT = [
-  { key: 'reset', label: 'Resetar', actionIcon: Undo2, action: () => { } },
-  { key: 'delete', label: 'Apagar', actionIcon: TrashIcon, action: () => { } },
-]
 
 function referenceByUniquePath(pathsArray: string[]){
   const meta = R.find(meta => meta.path === pathsArray[0], metadatasGenereted.value);
@@ -241,7 +170,9 @@ function referenceByUniquePath(pathsArray: string[]){
 const reorderArray = (originalArray: string[], tagsOrder: string[]) => {
   const isPatternIndex = R.includes('pattern');
 
-  const preservedPatternIndexes = R.addIndex<string, { item: string, index: number } | null>(R.map)((item, index) => 
+  const preservedPatternIndexes = R.addIndex<string, { item: string, index: number } | null>(
+    R.map
+  )((item, index) => 
     isPatternIndex(item) ? { index, item } : null, 
     originalArray
   ).filter((x): x is { item: string, index: number} => x !== null);
@@ -251,7 +182,9 @@ const reorderArray = (originalArray: string[], tagsOrder: string[]) => {
     R.sort((itemA, itemB) => R.indexOf(itemA, tagsOrder) - R.indexOf(itemB, tagsOrder)) 
   )(originalArray);
 
-  const resultArray : string[] = R.addIndex(R.reduce)((acc : string[], item, index: number) => {
+  const resultArray : string[] = R.addIndex(
+    R.reduce
+  )((acc : string[], item, index: number) => {
     const patternItem  = R.find( pattern => pattern.index === index, preservedPatternIndexes);
     return patternItem ? R.append(patternItem.item, acc) : R.append(orderedItems.shift(), acc);
   }, [], originalArray);
@@ -260,7 +193,6 @@ const reorderArray = (originalArray: string[], tagsOrder: string[]) => {
 };
 
 function watchPathsReferece(paths: Set<string>) {
-  console.log("PATHS", paths)
   swapContextActive.value = null;
   const pathsArray = paths.size === 0 ? metadatasGenereted.value.map(item => item.path) :  [...paths.keys()];
 
@@ -291,9 +223,9 @@ function watchPathsReferece(paths: Set<string>) {
 
   currentPattern.value = mappingTagPattern(
     reorderArray(patterns, [
-    'trackNumber', 'title', 'artist', 'album', 
-    'year', 'genre', 'partOfSet', 'date',
-    'publisher', 'copyright', 'performerInfo'
+      'trackNumber', 'title', 'artist', 'album', 
+      'year', 'genre', 'partOfSet', 'date',
+      'publisher', 'copyright', 'performerInfo'
     ])
   )
 }
