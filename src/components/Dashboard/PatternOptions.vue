@@ -2,14 +2,23 @@
 import * as R from "ramda";
 import { CurrentPatternReference, ReferencePatterns } from '@/types/vue-types';
 import { METADATAS } from "../constants/metadatas";
+import { usePathSelection } from "@/stores/path-selections";
+import { storeToRefs } from "pinia";
 
-const {} = defineProps<{
+const { pathSelections } = storeToRefs(usePathSelection());
+
+
+type PropsOptions = {
   isOpenPatternList: boolean,
   handlePatternListLeave: () => void,
   patternReferences: ReferencePatterns,
   handleSelectPattern: (patternKey: string) => void,
   currentPattern : CurrentPatternReference
-}>()
+}
+
+const { currentPattern } = defineProps<PropsOptions>();
+
+
 </script>
 
 <template>

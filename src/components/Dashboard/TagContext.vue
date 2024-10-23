@@ -4,6 +4,11 @@ import { METADATAS } from '../constants/metadatas';
 import { useMedatas } from "@/stores/metadatas";
 import { storeToRefs } from 'pinia';
 import { CurrentPatternReference } from '@/types/vue-types';
+import { usePathSelection } from '@/stores/path-selections';
+import * as R from "ramda";
+import { Tags } from '@/types/tags';
+
+const { pathSelections } = storeToRefs(usePathSelection());
 
 const { swapContextActive, currentPattern } = defineProps<{
   swapContextActive : number,
@@ -12,12 +17,24 @@ const { swapContextActive, currentPattern } = defineProps<{
   handleLeaveContextOptions: () => void
 }>()
 
-const { metadatasGenereted } = storeToRefs(useMedatas());
+const metadatas = useMedatas();
+const { changeTagsReferences } = metadatas
+const { metadatasGenereted } = storeToRefs(metadatas);
+
 
 const ACTIONS_CONTEXT = [
   { key: 'reset', label: 'Resetar', actionIcon: Undo2, action: () => { } },
   { key: 'delete', label: 'Apagar', actionIcon: TrashIcon, action: () => { } },
 ]
+
+function handleChangeTag(oldTag: string, changedTag: string){
+  const paths = [...pathSelections.value.keys()];
+
+  R.forEach((path) => {
+    changeTagsReferences(path, oldTag, changedTag);
+  }, paths)
+}
+
 </script>
 
 <template>
@@ -38,8 +55,13 @@ const ACTIONS_CONTEXT = [
             </div>
           </div>
 
-          <div v-for="{ label: sublabel, icon } in METADATAS" v-show="sublabel !== label"
-            class="flex items-center gap-6 w-52 px-5 py-2 rounded-lg hover:bg-base-dark-700">
+          <div 
+            v-for="[tag, { label: sublabel, icon }] in R.toPairs(METADATAS)" 
+            v-show="sublabel !== label"
+            :key="tag"
+            class="flex items-center gap-6 w-52 px-5 py-2 rounded-lg hover:bg-base-dark-700"
+            @click="() => handleChangeTag(tagName, tag)"
+          >
             <component :is="icon" class="size-4" />
             <div>{{ sublabel }}</div>
           </div>
