@@ -31,7 +31,8 @@ export type FieldValue = {
 
 export type FieldUniqueValue = {
   tagValue: string,
-  status: FieldTagStatus
+  status: FieldTagStatus,
+  patternIndex: number
 }
 
 export type InputProps = Map<keyof Tags, FieldValue>;

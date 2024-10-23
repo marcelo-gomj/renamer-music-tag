@@ -50,12 +50,13 @@ export const useMedatas = defineStore('metadatas', () => {
       : results;
 
       R.forEach(({ metadatas, path }) => {
-        R.forEachObjIndexed(({ pattern }, tag) => {
+        R.forEachObjIndexed(({ pattern, patternIndex }, tag) => {
           if(isNotPatternKey(tag)){
             currentMetadatas.value[path] = R.assocPath(
               [tag], { 
                 status: 'GENERATED', 
-                tagValue: pattern
+                tagValue: pattern,
+                patternIndex
               },
               currentMetadatas.value[path] 
             )
@@ -75,6 +76,37 @@ export const useMedatas = defineStore('metadatas', () => {
     );
   }
 
+  function mergeTags(metaOldTag: FieldUniqueValue, metaNewTag: FieldUniqueValue){
+    if(metaNewTag.patternIndex > metaOldTag.patternIndex){
+
+      return
+    }
+  }
+
+  function changeTagsReferences(path: string, oldTag: string, newTag: string){
+    const metaInitial = currentMetadatas.value[path];
+
+    if(R.hasIn(newTag, metaInitial)){
+      const metaNewTag = metaInitial[newTag as keyof Tags];
+      const metaOldTag = metaInitial[oldTag as keyof Tags];
+
+      const mergeTags = metaNewTag.patternIndex > metaOldTag.patternIndex ? (
+        R.modifyPath([oldTag as keyof Tags, 'tagValue'], R.concat(R.__, metaNewTag.tagValue) , metaInitial)
+      ) :
+      R.modifyPath([oldTag as keyof Tags, 'tagValue'], R.concat(metaNewTag.tagValue), metaInitial)
+      
+      currentMetadatas.value[path] = R.dissoc(oldTag as keyof Tags, mergeTags);
+      return;
+
+    }
+
+
+    currentMetadatas.value[path] = R.flow(metaInitial, [
+      R.dissoc(oldTag),
+      R.assoc(newTag, metaInitial[oldTag as keyof Tags])
+    ])
+  }
+
   function updateSource(paths: string[]){
     sourceDirectory.value = paths
   }
@@ -84,6 +116,7 @@ export const useMedatas = defineStore('metadatas', () => {
   return {
     currentMetadatas,
     metadatasGenereted,
+    changeTagsReferences,
     sourceDirectory,
     updateByPathReference,
     updateSource
