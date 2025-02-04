@@ -1,240 +1,232 @@
 <template>
   <div class="w-full">
     <div class="h-12">
-      <div 
-        v-if="pathSelections.size !== 1"
-        class="flex gap-8 items-center"
-      >
-        <div class="font-medium text-x1 w-48">Referência padrão {{ currentPattern?.patternKey ? findIndexPattern(currentPattern.patternKey) : 'Variado' }}</div>
-  
+      <div v-if="pathSelections.size !== 1" class="flex gap-8 items-center">
+        <div class="font-medium text-x1 w-48">Referência padrão {{ currentPattern?.patternKey === 'all' ? 'Variado' :
+          findIndexPattern(currentPattern.patternKey) }}</div>
+
         <div class="relative select-none">
-          <div 
+          <div
             class="flex group items-center gap-4 text-x1 h-12 text-base-white-500 font-medium hover:to-base-white-700 cursor-pointer"
-            @click="handleTogglePatternList"
-          >
+            @click="handleTogglePatternList">
             <div class="leading-[0]">Mostrar outros padrões</div>
-            <chevron-down :class="`size-5 ${ isOpenPatternList ? 'rotate-180' : ''}`" />
+            <chevron-down :class="`size-5 ${isOpenPatternList ? 'rotate-180' : ''}`" />
           </div>
-    
-          <pattern-options 
-            :current-pattern="currentPattern"
-            :handle-pattern-list-leave="handlePatternListLeave"
-            :is-open-pattern-list="isOpenPatternList"
-            :pattern-references="patternReferences"
-            :handle-select-pattern="handleSelectPattern"
-          />
+
+          <pattern-options :current-pattern="currentPattern" :handle-pattern-list-leave="handlePatternListLeave"
+            :is-open-pattern-list="isOpenPatternList" :pattern-references="patternReferences"
+            :handle-select-pattern="handleSelectPattern" />
         </div>
       </div>
 
-      <div
-        v-else
-        class="flex items-center h-12 gap-8 text-x1 font-medium "
-      >
+      <div v-else class="flex items-center h-12 gap-8 text-x1 font-medium ">
         <div>Referência ao arquivo:</div>
-        <div 
-          class="text-base-white-700"
-        >{{ R.last([...pathSelections.keys()][0]?.split(/[\\|/]/)) }}</div>
+        <div class="text-base-white-700">{{ R.last([...pathSelections.keys()][0]?.split(/[\\|/]/)) }}</div>
       </div>
     </div>
 
-    <tag-context 
-      :active-context-options="activeContextOptions"
-      :current-pattern="currentPattern"
-      :swap-context-active="swapContextActive"
-      :handle-leave-context-options="handleLeaveContextOptions"
-    />
+    <tag-context :current-pattern="currentPattern" @changeTagPattern="watchPathChanges" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { 
-  Music2, Captions, Disc, ChevronDown,
-  CalendarIcon, User, Tag, TrashIcon, 
-  Undo2, Users, Grid2X2 
-} from 'lucide-vue-next';
+import { ChevronDown, Grid2X2 } from 'lucide-vue-next';
 import * as R from "ramda";
 import { useMedatas } from '@/stores/metadatas';
 import { storeToRefs } from 'pinia';
-import { 
+import {
   CurrentPatternReference,
-  PatternList, ReducePatternsObject, 
-  ReferencePathsPattern, ReferencePatterns 
-} from '@/types/vue-types'
-import { ref, watch } from 'vue';
-import { GenMetadatasResult, GenTagKey } from '@/types/metas-type';
+  ReducePatternsObject,
+  PathIndexReferences,
+  PatternReferences
+} from '@/types/vue/references'
+import { reactive, ref, watch } from 'vue';
+import { GenMetadatas, GenMetadatasResult, GenTagKey } from '@/types/metas-type';
 import { usePathSelection } from '@/stores/path-selections';
 import TagContext from './TagContext.vue';
 import PatternOptions from './PatternOptions.vue';
 import { METADATAS } from '../constants/metadatas';
+import { Tags } from '@/types/tags';
 
-const { metadatasGenereted } = storeToRefs(useMedatas());
-const usePaths = usePathSelection();
-const { pathSelections } = storeToRefs(usePaths);
-const { selectPath } = usePaths;
+type PatternsGroupMatch = R.ValueOfUnion<PathIndexReferences>[][];
 
-const pathReferences = ref<ReferencePathsPattern>({})
-const patternReferences = ref<ReferencePatterns>({})
-const currentPattern = ref<CurrentPatternReference>();
-const swapContextActive = ref<number | null>(null);
+const { metadatasGenereted, currentMetadatas } = storeToRefs(useMedatas());
+const usePath = usePathSelection()
+const { pathSelections } = storeToRefs(usePath);
+const { getAllPaths, selectPath } = usePath;
+let pathReferences = reactive<PathIndexReferences>({})
+let patternReferences = reactive<PatternReferences>({ all: undefined })
+let currentPattern = reactive<CurrentPatternReference>({ patternKey: undefined, patternProps: [] });
 const isOpenPatternList = ref(false);
 
-const mappingTagPattern = (patterns: ReferencePatterns | string[], patternKey?: string) => ({
-  patternKey,
-  patternProps : R.map((tagName: (GenTagKey | string)): PatternList[0] => {
-    const prop = R.includes('pattern', tagName) ?
-      { label: tagName, icon: Grid2X2 } :
-      METADATAS[tagName as GenTagKey];
 
-    return ({
-      tagName,
-      isTag: R.isNotNil(prop?.label),
-      icon: prop?.icon,
-      label: prop?.label || tagName
-    })
-  }, R.is(Array, patterns) ? patterns : patterns[patternKey])
+// objeto inicial das referências
+const createDefaultReferenceModel = (patternId: string | number) => ({
+  patternKey: String(patternId),
+  repeats: {}
 })
 
-function watchReferenceMetadatas(metadatasGenereted: GenMetadatasResult[]) {
-  const { patterns, pathIndexedByPatterns } = metadatasGenereted.reduce(
-    ({ patterns = {}, pathIndexedByPatterns = {} }, { metadatas, path }, index) => {
-      const tagList = R.keys(metadatas);
-      const patternKey = 'p' + index;
+const patternIndexer = (
+  { metadatas, path }: { metadatas: GenMetadatas, path: string },
+  index: number
+) => {
+  const tagList = R.keys(metadatas);
+  const patternKey = 'p' + index;
 
-      R.forEachObjIndexed((pattern, patternId) => {
-        if (R.equals(tagList, pattern)) {
-          pathIndexedByPatterns[path] = String(patternId);
-        }
-      }, patterns)
+  R.forEachObjIndexed((pattern, patternId) => {
+    if (R.equals(tagList, pattern)) {
+      pathReferences[path] = createDefaultReferenceModel(patternId);
+    }
+  }, patternReferences)
 
-      if (!R.hasIn(path, pathIndexedByPatterns)) {
-        patterns[patternKey] = tagList;
-        pathIndexedByPatterns[path] = patternKey;
-      }
-
-      return { pathIndexedByPatterns, patterns }
-    },
-    {} as ReducePatternsObject
-  )
-
-  pathReferences.value = pathIndexedByPatterns;
-  patternReferences.value = patterns;
-  watchPathsReferece(pathSelections.value)
+  if (!R.hasIn(path, pathReferences)) {
+    patternReferences[patternKey] = tagList;
+    pathReferences[path] = createDefaultReferenceModel(patternKey);
+  }
+}
+// Cria os padrões e indexa nos caminhos correspondentes 
+const indexPathPatternReferences = (metadatasGenereted: GenMetadatasResult[]) => {
+  metadatasGenereted.forEach(patternIndexer);
+  watchPathChanges();
 }
 
-function activeContextOptions(tagIndex: number) {
-  swapContextActive.value = tagIndex;
+///
+function changeTagPattern(tagIndex: number, newTag: string) {
+  currentPattern.patternProps[tagIndex] = newTag
 }
 
-function handleLeaveContextOptions() {
-  swapContextActive.value = null;
-}
-
-function handleTogglePatternList(){
+function handleTogglePatternList() {
   isOpenPatternList.value = !isOpenPatternList.value;
 }
 
-function handlePatternListLeave(){
+function handlePatternListLeave() {
   isOpenPatternList.value = false;
 }
 
-function handleSelectPattern(patternKey: string | undefined){
+function handleSelectPattern(patternKey: string) {
+  if (patternKey === currentPattern.patternKey) return;
+
   pathSelections.value.clear()
 
-  if(!patternKey){
-    watchPathsReferece(pathSelections.value)
-    return;
-  }
+  R.forEachObjIndexed(({ patternKey: key }, path) => {
+    if (key === patternKey) {
+      selectPath(String(path));
+    }
+  }, pathReferences)
 
-  currentPattern.value = mappingTagPattern(patternReferences.value, patternKey);
-  const paths = R.filter(([_, key]) => key === patternKey,
-    R.toPairs(pathReferences.value)
-  )
-
-  paths.forEach(([path]) => {
-    selectPath(path)
-  })
 }
 
-function referenceByUniquePath(pathsArray: string[]){
-  const meta = R.find(meta => meta.path === pathsArray[0], metadatasGenereted.value);
+const referenceByUniquePath = (path: string) => {
+  const {
+    metadatas,
+    patterns
+  } = R.find(meta => meta.path === path, metadatasGenereted.value);
 
-  const patternKeys = R.reduce(
-    (patterns, [tag, { patternIndex }]) => R.update(patternIndex, tag, patterns),
-    meta.patterns,
-    R.toPairs(meta.metadatas)
+  const indexedTagRepeats = R.reduce((tagIndexed, [tag, tagRepeatsIndex]) => {
+    for (const { patternIndex } of tagRepeatsIndex) {
+      tagIndexed[patternIndex] = tag;
+    }
+
+    return tagIndexed;
+  },
+    {} as Record<number, GenTagKey>,
+    R.toPairs(pathReferences[path].repeats)
   )
 
-  currentPattern.value =  mappingTagPattern(patternKeys);
-}
+  const deepReference = R.reduce(
+    (patterns, [tag, { patternIndex }]) => {
+      if(R.includes('pattern-', tag)) return patterns;
 
-const reorderArray = (originalArray: string[], tagsOrder: string[]) => {
-  const isPatternIndex = R.includes('pattern');
-
-  const preservedPatternIndexes = R.addIndex<string, { item: string, index: number } | null>(
-    R.map
-  )((item, index) => 
-    isPatternIndex(item) ? { index, item } : null, 
-    originalArray
-  ).filter((x): x is { item: string, index: number} => x !== null);
-
-  const orderedItems : string[] = R.pipe(
-    R.filter<string>(R.complement(isPatternIndex)),
-    R.sort((itemA, itemB) => R.indexOf(itemA, tagsOrder) - R.indexOf(itemB, tagsOrder)) 
-  )(originalArray);
-
-  const resultArray : string[] = R.addIndex(
-    R.reduce
-  )((acc : string[], item, index: number) => {
-    const patternItem  = R.find( pattern => pattern.index === index, preservedPatternIndexes);
-    return patternItem ? R.append(patternItem.item, acc) : R.append(orderedItems.shift(), acc);
-  }, [], originalArray);
-
-  return resultArray;
-};
-
-function watchPathsReferece(paths: Set<string>) {
-  swapContextActive.value = null;
-  const pathsArray = paths.size === 0 ? metadatasGenereted.value.map(item => item.path) :  [...paths.keys()];
-
-  if (paths.size === 1) {
-    referenceByUniquePath(pathsArray);
-    return;
-  }
+      return R.update(patternIndex, indexedTagRepeats[patternIndex] || tag, patterns)
+    },
+    patterns,
+    R.toPairs(metadatas)
+  )
   
-  const uniquePatterns = R.into([], R.compose(
-      R.map((path: string) => pathReferences.value[path]),
-      R.uniq<string>
-    ),
-    pathsArray 
-  )
-  const isUniquePattern = R.length(uniquePatterns) === 1;
+  currentPattern.patternKey = pathReferences[path].patternKey;
+  currentPattern.patternProps = deepReference;
+}
 
-  if(isUniquePattern){
-    currentPattern.value = mappingTagPattern(patternReferences.value, uniquePatterns[0]);
+
+const reorderMetaTags = (groups: GenTagKey[][]) => {
+  const patternProps = R.filter((tag) => (
+    R.reduce((hasTag, group) => (
+      R.includes(tag, group) ? R.reduced(true) : hasTag
+    ), false, groups)
+  ), [
+    'trackNumber', 'title', 'artist', 'album',
+    'year', 'genre', 'partOfSet', 'date',
+    'publisher', 'copyright', 'performerInfo'
+  ] as GenTagKey[])
+
+  return { patternProps, patternKey: 'all' }
+}
+
+const matchUniquePattern = ([groups]: PatternsGroupMatch) => {
+  const { patternKey } = R.head(groups);
+
+  const repeatPatterns = R.reduce(
+    (repeatsAcc, { repeats }) => {
+      R.forEachObjIndexed((repeat, tag) => {
+        if (repeatsAcc[tag] === undefined || repeat.length > repeatsAcc[tag]) {
+          repeatsAcc[tag] = repeat.length;
+        }
+
+        return repeatsAcc
+      }, repeats);
+
+      return repeatsAcc
+    },
+    {} as { [tag in keyof Tags]: number },
+    groups
+  )
+
+  const patternProps = R.map(tag => {
+    return repeatPatterns[tag as keyof Tags] ? R.repeat(tag, repeatPatterns[tag as keyof Tags]) : tag;
+  }, patternReferences[patternKey])
+
+  return { patternProps, patternKey }
+}
+
+const listMultiPatterns = R.pipe(
+  R.map((group: PatternsGroupMatch[0]) => (
+    patternReferences[group[0].patternKey]
+  )),
+  reorderMetaTags
+)
+
+const findPatternsByPath = R.pipe(
+  R.map((path: string) => pathReferences[path]),
+  R.collectBy(R.prop('patternKey')),
+  R.ifElse(
+    groups => groups.length === 1,
+    matchUniquePattern,
+    listMultiPatterns
+  )
+)
+
+const watchPathChanges = () => {
+  console.log("PASSANDO!!!!!!!!!!!!!!!!!!")
+  const pathsArray = getAllPaths();
+
+  if (pathsArray.length === 1) {
+    referenceByUniquePath(pathsArray[0]);
     return;
   }
 
-  const patternsArray = R.map( patternKey => patternReferences.value[patternKey], uniquePatterns); 
-  const patterns = R.reduce(
-    R.union, 
-    [], 
-    patternsArray
-  ) as string[]
-
-  currentPattern.value = mappingTagPattern(
-    reorderArray(patterns, [
-      'trackNumber', 'title', 'artist', 'album', 
-      'year', 'genre', 'partOfSet', 'date',
-      'publisher', 'copyright', 'performerInfo'
-    ])
-  )
+  const { patternProps, patternKey } = findPatternsByPath(pathsArray);
+  Object.assign(currentPattern, { patternProps, patternKey })
 }
 
-function findIndexPattern(patternKey: string){
-  return R.findIndex( data => data === patternKey, R.keys(patternReferences.value)) + 1
+function findIndexPattern(patternKey: string) {
+  return R.findIndex(data => data === patternKey, R.keys(patternReferences)) + 1
 }
 
 // genarete initial patterns
-watch(metadatasGenereted, watchReferenceMetadatas);
-watch(pathSelections, watchPathsReferece, { deep: true });
+watch(metadatasGenereted, indexPathPatternReferences, { deep: true });
+watch(pathSelections, watchPathChanges, { deep: true });
+watch(currentMetadatas, () => {
+  console.log("--------------------------------------") 
+  watchPathChanges()
+}, { deep: true})
 </script>

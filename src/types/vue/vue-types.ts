@@ -1,6 +1,6 @@
 import { FunctionalComponent, h } from "vue"
-import { GenMetadatasResult, GenTagKey } from "./metas-type"
-import { Tags } from "./tags"
+import { GenMetadatasResult } from "../metas-type"
+import { Tags } from "../tags"
 
 export type SourceSelectProps = {
   currentDir: string,
@@ -61,26 +61,3 @@ export type GlobalNotificationsProps = {
 export type SetNotificationFunction = (
   notificationsProps: GlobalNotificationsProps
 ) => void;
-
-
-export type ReferencePathsPattern = {
-  [path: string] : string
-}
-
-export type ReferencePatterns = {
-  [pattern: string] : GenTagKey[]
-}
-
-export type ReducePatternsObject = {
-  pathIndexedByPatterns : ReferencePathsPattern,
-  patterns : ReferencePatterns
-}
-
-export type PatternList = ({ 
-  tagName: GenTagKey | string,
-  isTag : boolean,
-  icon?: any,  
-  label?: string 
-})[] 
-
-export type CurrentPatternReference = { patternKey: string, patternProps: PatternList }

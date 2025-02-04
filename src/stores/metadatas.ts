@@ -9,8 +9,9 @@ import { useNotification } from "./notifications";
 import { useModal } from "./modal";
 import * as R from "ramda";
 import ErrorsDetailModal from "@/components/ErrorsDetailModal.vue";
-import { FieldUniqueValue } from "@/types/vue-types";
+import { FieldUniqueValue } from "@/types/vue/vue-types";
 import { Tags } from "@/types/tags";
+import { ChangeTagProps } from "@/types/vue/references";
 
 export const useMedatas = defineStore('metadatas', () => {
   const metadatasGenereted = ref<GenMetadatasResult[]>([]);
@@ -70,41 +71,86 @@ export const useMedatas = defineStore('metadatas', () => {
     updateSourceDirectory(paths);
   }
 
-  function updateByPathReference([path, tag] : string[], value: FieldUniqueValue ){
+  function updateByPathReference([path, tag] : string[], value: Omit<FieldUniqueValue, 'patternIndex'> ){
+    const { patternIndex } = currentMetadatas.value[path][tag as keyof Tags];
     currentMetadatas.value[path] = R.assocPath(
-      [tag], value, currentMetadatas.value[path]
+      [tag], { value, patternIndex }, currentMetadatas.value[path]
     );
   }
 
-  function mergeTags(metaOldTag: FieldUniqueValue, metaNewTag: FieldUniqueValue){
-    if(metaNewTag.patternIndex > metaOldTag.patternIndex){
-
-      return
-    }
-  }
-
-  function changeTagsReferences(path: string, oldTag: string, newTag: string){
+  function changeTagsReferences(
+    path: string, 
+    {
+      currentTag,
+      currentIndexTag,
+      updateNewTag,
+      codePattern,
+      isNextToTag,
+    } : ChangeTagProps
+  ){
+    console.log("PASSOU")
     const metaInitial = currentMetadatas.value[path];
+    const metaNewTag = metaInitial[currentTag as keyof Tags];
+    const metaOldTag = metaInitial[updateNewTag as keyof Tags];
 
-    if(R.hasIn(newTag, metaInitial)){
-      const metaNewTag = metaInitial[newTag as keyof Tags];
-      const metaOldTag = metaInitial[oldTag as keyof Tags];
+    console.log("CHANGE PROPS", {
+      currentTag,
+      currentIndexTag,
+      updateNewTag,
+      codePattern,
+      isNextToTag 
+    })
+    
+    if(R.hasIn(currentTag, metaInitial) && isNextToTag){
 
-      const mergeTags = metaNewTag.patternIndex > metaOldTag.patternIndex ? (
-        R.modifyPath([oldTag as keyof Tags, 'tagValue'], R.concat(R.__, metaNewTag.tagValue) , metaInitial)
-      ) :
-      R.modifyPath([oldTag as keyof Tags, 'tagValue'], R.concat(metaNewTag.tagValue), metaInitial)
-      
-      currentMetadatas.value[path] = R.dissoc(oldTag as keyof Tags, mergeTags);
-      return;
+      if(codePattern === 'all'){
+        currentMetadatas.value[path] = R.evolve({
+          [currentTag] : () => metaOldTag,
+          [updateNewTag] : () => metaNewTag
+        }, metaInitial)
 
+        console.log("1. Algoritimo", currentMetadatas.value[path])
+
+        return;
+      }
+
+      if(isNextToTag){
+        const isNewTagNextPos =  metaNewTag.patternIndex > (metaOldTag?.patternIndex || currentIndexTag);
+        const getTagValuesWithDefault = (isTagNew ?: boolean) => (
+          isTagNew ? metaNewTag.tagValue : (metaOldTag?.tagValue || updateNewTag)
+        )
+        const orderTagValueByIndex =`${getTagValuesWithDefault(isNewTagNextPos)}/${getTagValuesWithDefault(!isNewTagNextPos)}`; 
+ 
+        const mergeTags = R.modify(
+          updateNewTag as keyof Tags, 
+          ({ patternIndex }: FieldUniqueValue) : Partial<FieldUniqueValue> => ({
+            patternIndex,
+            status: 'EDITED',
+            tagValue: orderTagValueByIndex
+          }),
+          metaInitial
+        )
+        
+        currentMetadatas.value[path] = R.dissoc(currentTag as keyof Tags, mergeTags);
+        console.log("2. Algoritimo", currentMetadatas.value[path])
+
+        return;        
+      }
     }
 
+    currentMetadatas.value[path] = {
+      [updateNewTag] : {
+        tagIndex: (metaOldTag?.patternIndex || currentIndexTag),
+        status: 'EDITED',
+        tagValue: (metaNewTag?.tagValue || currentTag)
+      },
+      ...R.dissoc(
+        currentTag as keyof Tags, 
+        metaInitial
+      ),
+    }
 
-    currentMetadatas.value[path] = R.flow(metaInitial, [
-      R.dissoc(oldTag),
-      R.assoc(newTag, metaInitial[oldTag as keyof Tags])
-    ])
+    console.log("3. Algoritimo", currentMetadatas.value[path])
   }
 
   function updateSource(paths: string[]){

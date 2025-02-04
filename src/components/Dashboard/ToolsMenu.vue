@@ -34,7 +34,7 @@
 <script setup lang="ts">
 import { inject } from "vue";
 import { FileSearch, FolderSearch, RefreshCcw, MoreHorizontal } from "lucide-vue-next";
-import { SourceSelectProps } from "src/types/vue-types";
+import { SourceSelectProps } from "@/types/vue/vue-types";
 import { OpenDialogOptions } from "electron";
 import { useMedatas } from "@/stores/metadatas";
 
