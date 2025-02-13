@@ -3,36 +3,39 @@ import { Grid2X2, TrashIcon, Undo2 } from 'lucide-vue-next';
 import { ALL_METADATAS, METADATAS } from '../constants/metadatas';
 import { useMedatas } from "@/stores/metadatas";
 import { storeToRefs } from 'pinia';
-import { ChangeTagProps, CurrentPatternReference, PatternInterfaces, PatternListProps, PatternReferences } from '@/types/vue/references';
+import { ChangeTagProps, PatternInterfaces, PatternListProps } from '@/types/vue/references';
 import { usePathSelection } from '@/stores/path-selections';
 import * as R from "ramda";
-import { ref, watch } from 'vue';
+import { inject, ref, watch } from 'vue';
 import { GenTagKey } from '@/types/metas-type';
 import { Tags } from '@/types/tags';
+import { usePatterns } from '@/stores/patterns';
 
 const { pathSelections } = storeToRefs(usePathSelection());
 const swapContextActive = ref<number | null>(null);
 const showTagGroup = ref<number | null>(null);
+const tagComponentProps = ref<PatternListProps>([])
 
-const { currentPattern } = defineProps<{
-  currentPattern: CurrentPatternReference
-}>();
+const { 
+  watchMetadatasPattern, 
+  currentPattern,
+  pathReferences, 
+  patternReferences 
+} = usePatterns();
 
-console.log("TEST ALL", currentPattern)
-
-const emit = defineEmits<{
-  changeTagPattern: []
-}>()
+const tes = inject<() => void>('tes');
 
 const metadatas = useMedatas();
 const { changeTagsReferences } = metadatas
-const { metadatasGenereted } = storeToRefs(metadatas);
+const { metadatasGenereted, currentMetadatas } = storeToRefs(metadatas);
 
-function getPropTag(tagName: GenTagKey | string) {
-  return R.includes('pattern', tagName) ?
-    { label: tagName, icon: Grid2X2 } :
-    METADATAS[tagName as GenTagKey];
-}
+const getPropTag = (
+  tagName: GenTagKey | string
+) => (
+  R.includes('pattern', tagName) ?
+  { label: tagName, icon: Grid2X2 } :
+  METADATAS[tagName as GenTagKey]
+)
 
 const createTagProps = (
   tagName: (string | GenTagKey),
@@ -46,8 +49,10 @@ const createTagProps = (
   label: labels?.label || tagName
 }) as PatternInterfaces;
 
-function createTagsInterface(patterns: (GenTagKey[] | GenTagKey | string)[] ): PatternListProps {
-  return R.flatten(patterns.map((tagName, index) => {
+const createTagsInterface = (
+  patterns: (GenTagKey[] | GenTagKey | string)[] 
+) : PatternListProps => (
+  R.flatten(patterns.map((tagName, index) => {
     if( R.is(String, tagName) ){
       return createTagProps(tagName, getPropTag(tagName)) 
     }
@@ -59,7 +64,7 @@ function createTagsInterface(patterns: (GenTagKey[] | GenTagKey | string)[] ): P
     const defaultMultiTag = R.head(tagName);
     return createTagProps(defaultMultiTag, getPropTag(defaultMultiTag));
   })
-)}
+))
 
 
 const ACTIONS_CONTEXT = [
@@ -67,15 +72,20 @@ const ACTIONS_CONTEXT = [
   { key: 'delete', label: 'Apagar', actionIcon: TrashIcon, action: () => { } },
 ]
 
-const handleChangeTag = (changeTag: ChangeTagProps) => {
+const handleChangeTag = (
+  changeTag: ChangeTagProps
+) => {
   const paths = [...pathSelections.value.keys()];
 
-  paths.forEach((path) => {
+  paths.forEach((path, index) => {
     changeTagsReferences(path, changeTag);
+    watchMetadatasPattern({ 
+      metadatas: currentMetadatas.value[path], 
+      path
+    }, index);
   });
 
-  emit("changeTagPattern");
-  console.log("EMIT FINAL", currentPattern)
+  tes();
 }
 
 function toggleContextOptions(tagIndex: number | null) {
@@ -107,11 +117,17 @@ function listContext0ptions(
     isTagValid ? [] : 
     [[
       R.head(tagInuques), 
-      {...ALL_METADATAS[R.head(tagInuques) as GenTagKey], isNext: true }
+      {
+        ...ALL_METADATAS[R.head(tagInuques) as GenTagKey], 
+        isNext: true 
+      }
     ]]
   )
 
-  const excludedCurrentPatterns = R.without(currentPatternFlatten, R.keys(ALL_METADATAS));
+  const excludedCurrentPatterns = R.without(
+    currentPatternFlatten, 
+    R.keys(ALL_METADATAS)
+  );
 
   return [
     ...tagInuques, 
@@ -126,13 +142,16 @@ function listContext0ptions(
 }
 
 watch([pathSelections, currentPattern], () => toggleContextOptions(null))
+watch(currentPattern, () => {
+  tagComponentProps.value = createTagsInterface(currentPattern?.patternProps);
+})
 </script>
 
 <template>
   <div class="flex flex-wrap font-medium gap-x-2 gap-y-4 pr-4 w-full mt-2 min-h-[2.2rem]">
     <div 
       v-if="metadatasGenereted.length"
-      v-for="(pattern, index) in createTagsInterface(currentPattern?.patternProps)"
+      v-for="(pattern, index) in tagComponentProps"
       @click="() => toggleContextOptions(index)" 
       @mouseleave="() => toggleContextOptions(null)"
       :key="(pattern.tagName + index)"

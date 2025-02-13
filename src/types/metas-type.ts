@@ -1,5 +1,5 @@
 import { Tags } from "./tags";
-import { FieldUniqueValue, FieldValue } from "./vue-types";
+import { FieldUniqueValue, FieldValue } from "./vue/vue-types";
 
 type PatternValue = {
   pattern: string,

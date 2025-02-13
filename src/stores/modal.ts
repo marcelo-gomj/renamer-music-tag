@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { repeat } from "ramda";
-import { ModalGlobalLayoutProps } from "src/types/vue-types";
+import { ModalGlobalLayoutProps } from "@/types/vue/vue-types";
 import { h, ref } from "vue";
 
 export const useModal = defineStore('modal', () => {

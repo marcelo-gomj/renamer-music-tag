@@ -88,18 +88,9 @@ export const useMedatas = defineStore('metadatas', () => {
       isNextToTag,
     } : ChangeTagProps
   ){
-    console.log("PASSOU")
     const metaInitial = currentMetadatas.value[path];
     const metaNewTag = metaInitial[currentTag as keyof Tags];
     const metaOldTag = metaInitial[updateNewTag as keyof Tags];
-
-    console.log("CHANGE PROPS", {
-      currentTag,
-      currentIndexTag,
-      updateNewTag,
-      codePattern,
-      isNextToTag 
-    })
     
     if(R.hasIn(currentTag, metaInitial) && isNextToTag){
 
@@ -108,8 +99,6 @@ export const useMedatas = defineStore('metadatas', () => {
           [currentTag] : () => metaOldTag,
           [updateNewTag] : () => metaNewTag
         }, metaInitial)
-
-        console.log("1. Algoritimo", currentMetadatas.value[path])
 
         return;
       }
@@ -132,7 +121,6 @@ export const useMedatas = defineStore('metadatas', () => {
         )
         
         currentMetadatas.value[path] = R.dissoc(currentTag as keyof Tags, mergeTags);
-        console.log("2. Algoritimo", currentMetadatas.value[path])
 
         return;        
       }
@@ -140,7 +128,7 @@ export const useMedatas = defineStore('metadatas', () => {
 
     currentMetadatas.value[path] = {
       [updateNewTag] : {
-        tagIndex: (metaOldTag?.patternIndex || currentIndexTag),
+        patternIndex: (metaOldTag?.patternIndex || currentIndexTag),
         status: 'EDITED',
         tagValue: (metaNewTag?.tagValue || currentTag)
       },
@@ -150,7 +138,6 @@ export const useMedatas = defineStore('metadatas', () => {
       ),
     }
 
-    console.log("3. Algoritimo", currentMetadatas.value[path])
   }
 
   function updateSource(paths: string[]){

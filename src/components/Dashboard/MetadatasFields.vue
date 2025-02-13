@@ -85,7 +85,7 @@ import {
   IndexPathTags, 
   InputDataProps, 
   InputProps, 
-} from 'src/types/vue-types';
+} from '@/types/vue/vue-types';
 import { Tags } from 'src/types/tags';
 import { useMedatas } from '@/stores/metadatas';
 import { storeToRefs } from 'pinia';
@@ -104,7 +104,7 @@ const { pathSelections } = storeToRefs(usePath);
 const { isPathSelected } = usePath;
 const  { currentMetadatas, metadatasGenereted } = storeToRefs(metadatas);
 const notifications = useNotification();
-const { updateSource, updateByPathReference } = metadatas;
+const { updateByPathReference } = metadatas;
 
 const tagList: (keyof Tags)[] = [
   'trackNumber', 'title', 'artist', 'album', 
@@ -193,7 +193,7 @@ async function getAllOriginalMetadatas(allFields = false) {
 
 function createDefaultInputFields(
   path: string,
-  { tag, tagValue, status }: FieldUniqueValue & { tag: keyof Tags }
+  { tag, tagValue, status }: Omit<FieldUniqueValue, 'patternIndex'> & { tag: keyof Tags }
 ) {
   if (
     pathSelections.value.size &&
@@ -226,17 +226,6 @@ function createDefaultInputFields(
     })
   }
 }
-
-// function genereteTagsInitial(currentMetadatas: CurrentUserMetadatas[]) {
-//   R.forEachObjIndexed((metadatas, path) => {
-//     R.forEachObjIndexed((meta, tag) => {
-//       createDefaultInputFields(
-//         String(path), 
-//         {status: , tagValue, tag }
-//       );
-//     }, metadatas)
-//   }, currentMetadatas)
-// }
 
 function chooseIconByTag(tag: keyof Tags | string) {
   return ({
@@ -284,7 +273,7 @@ function watchSelectFilesChange() {
   inputValues.value = createDefaultTags(tagList);
 
   R.forEachObjIndexed((metadatas, path) => {
-    R.forEachObjIndexed(({ tagValue, status }, tag) => {
+    R.forEachObjIndexed(({ tagValue, status, patternIndex }, tag) => {
       createDefaultInputFields(String(path), { status, tagValue, tag })
     }, metadatas)
   }, currentMetadatas.value);
@@ -300,7 +289,7 @@ function watchChangeInput(tag: keyof Tags) {
         isPathSelected(path) ||
         pathSelections.value.size === 0
       ) {
-        const updatedValue: FieldUniqueValue = {
+        const updatedValue: Omit<FieldUniqueValue, 'patternIndex'> = {
           status: 'EDITED', tagValue: inputChanged
         }
 

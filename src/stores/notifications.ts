@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import * as R from "ramda";
-import { GlobalNotificationsProps } from "src/types/vue-types";
+import { GlobalNotificationsProps } from "@/types/vue/vue-types";
 import { ref, watch } from "vue";
 
 export const useNotification = defineStore('notifications', () => {

@@ -13,4 +13,3 @@ export const api = {
 }
 
 contextBridge.exposeInMainWorld("api", api);
-
