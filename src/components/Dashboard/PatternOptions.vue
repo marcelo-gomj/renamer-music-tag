@@ -21,13 +21,16 @@ const { patternReferences, currentPattern } = defineProps<PropsOptions>();
 </script>
 
 <template>
-  <div v-show="isOpenPatternList"
-    class="absolute flex -left-2 mt-2 top-full p-2 border-[1px] border-base-dark-850 rounded-lg bg-base-dark-200 z-[900]"
-    @mouseleave="handlePatternListLeave">
+  <div 
+    v-show="isOpenPatternList"
+    class="absolute overflow-y-scroll max-h-[80vh] flex -left-2 mt-2 top-full p-2 border-[1px] border-base-dark-850 rounded-lg bg-base-dark-200 z-[900]"
+    @mouseleave="handlePatternListLeave"
+  >
     <div class="w-auto min-w-52">
       <div v-for="([patternKey, patterns], index) of R.toPairs(patternReferences)"
         @click="() => handleSelectPattern(patternKey)"
-        :class="`flex relative items-center gap-5 text-x2 font-medium cursor-pointer rounded-md hover:bg-base-dark-500 text-base-white-500`">
+        :class="`flex relative items-center gap-5 text-x2 font-medium cursor-pointer rounded-md hover:bg-base-dark-500 text-base-white-500`"
+      >
         <div class="space-y-0.5 py-2.5 pl-5 pr-3">
           
           <div 
