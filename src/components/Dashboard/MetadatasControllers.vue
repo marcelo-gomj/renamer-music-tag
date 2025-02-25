@@ -59,9 +59,9 @@ const { currentMetadatas } = storeToRefs(metadatas);
 const { notify } = useNotification(); 
 const { show, close } = useModal();
 
-const tools = [
-  { title: 'Tag generated', Icon: WandSparkles, handler: () => { } },
-  { title: 'Reset metadatas', Icon: Undo2, handler: () => { } },
+const tools : { title: string, Icon : any, handler: () => void }[] = [
+  // { title: 'Tag generated', Icon: WandSparkles, handler: () => { } },
+  // { title: 'Reset metadatas', Icon: Undo2, handler: () => { } },
 ]
 
 async function handleClickProcessMetadatas(){
