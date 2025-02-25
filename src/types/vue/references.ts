@@ -1,18 +1,7 @@
-import { GenTagKey } from "../metas-type"
-import { Tags } from "../tags"
-
-export type ArrayTagRepeats = { 
-  [key in keyof Tags] : ({ 
-    patternIndex: number, 
-    listIndex: number 
-  })[] 
-}
+import { GenTagKey } from "../metas-type";
 
 export type PathIndexReferences = {
-  [path: string] : {
-    patternKey: string, 
-    repeats: ArrayTagRepeats
-  }
+  [path: string] : string
 }
  
 export type PatternReferences = {
@@ -37,10 +26,11 @@ export type ChangeTagProps = {
   updateNewTag: string,
   codePattern : string,
   currentIndexTag: number,
+  isPathUnique: boolean,
   isNextToTag: boolean
 }
 
-export type PatternListProps = PatternInterfaces []
+export type PatternListProps = PatternInterfaces[];
 
 export type CurrentPatternReference = { 
   patternKey: string, 

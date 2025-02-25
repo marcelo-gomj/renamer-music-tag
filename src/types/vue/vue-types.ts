@@ -11,7 +11,9 @@ export type SourceSelectProps = {
   }
 }
 
-export type RoutePath = (path: 'home' | 'dashboard' | 'config') => void
+export type RoutePath = (
+  path: ('home' | 'dashboard' | 'config')
+) => void;
 
 export type ModalGlobalLayoutProps = {
   title?: string,
@@ -21,7 +23,10 @@ export type ModalGlobalLayoutProps = {
   closeModal?: () => void
 }
 
-export type ProvideModalGlobal = (options: ModalGlobalLayoutProps) => void;
+export type ProvideModalGlobal = (
+  options: ModalGlobalLayoutProps
+) => void;
+
 export type FieldTagStatus = "EDITED" | "GENERATED" | "DEFAULT";
 
 export type FieldValue = {
@@ -31,8 +36,7 @@ export type FieldValue = {
 
 export type FieldUniqueValue = {
   tagValue: string,
-  status: FieldTagStatus,
-  patternIndex: number
+  status: FieldTagStatus
 }
 
 export type InputProps = Map<keyof Tags, FieldValue>;
