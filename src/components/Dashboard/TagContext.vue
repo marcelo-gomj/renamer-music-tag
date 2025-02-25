@@ -19,8 +19,7 @@ const tagComponentProps = ref<PatternListProps>([])
 const { 
   watchMetadatasPattern, 
   currentPattern,
-  pathReferences, 
-  patternReferences 
+  cleanPatternUnless
 } = usePatterns();
 
 const tes = inject<() => void>('tes');
@@ -32,9 +31,8 @@ const { metadatasGenereted, currentMetadatas } = storeToRefs(metadatas);
 const getPropTag = (
   tagName: GenTagKey | string
 ) => (
-  R.includes('pattern', tagName) ?
-  { label: tagName, icon: Grid2X2 } :
-  METADATAS[tagName as GenTagKey]
+  ALL_METADATAS[tagName as GenTagKey] ||
+  { label: tagName, icon: undefined } 
 )
 
 const createTagProps = (
@@ -43,10 +41,10 @@ const createTagProps = (
   isMultiTag?: boolean
 ) => ({
   tagName,
-  isTag: R.isNotNil(labels?.label),
+  isTag: !!labels?.icon,
   isMultiTag,
   icon: labels?.icon,
-  label: labels?.label || tagName
+  label: labels?.label
 }) as PatternInterfaces;
 
 const createTagsInterface = (
@@ -83,6 +81,7 @@ const handleChangeTag = (
       metadatas: currentMetadatas.value[path], 
       path
     }, index);
+    cleanPatternUnless();
   });
 
   tes();
@@ -155,7 +154,7 @@ watch(currentPattern, () => {
       @click="() => toggleContextOptions(index)" 
       @mouseleave="() => toggleContextOptions(null)"
       :key="(pattern.tagName + index)"
-      :class="`flex relative tracking-wide items-center select-none group text-x1 gap-4 cursor-pointer ${pattern.isTag ? `${index === swapContextActive ? 'bg-base-dark-700' : ''} pl-5 pr-6 rounded-full bg-base-dark-400 shadow-[2px_2px_20px] shadow-base-dark-200` : `${index === swapContextActive ? 'border-green-500' : ''} border-2 rounded-full border-[transparent] cursor-pointer px-2`}`"
+      :class="`flex shrink-0 relative tracking-wide items-center select-none group text-x1 gap-4 cursor-pointer ${pattern.isTag ? `${index === swapContextActive ? 'bg-base-dark-700' : ''} pl-5 pr-6 rounded-full bg-base-dark-400 shadow-[2px_2px_20px] shadow-base-dark-200` : `${index === swapContextActive ? 'border-green-500' : ''} border-2 rounded-full border-[transparent] cursor-pointer px-2`}`"
     >
       <component :is="pattern.icon" class="w-[1rem] h-[1rem]" />
       <div :class="`leading-[1] ${pattern.isTag ? '' : 'font-bold'}`">{{ pattern.label }}</div>
@@ -186,6 +185,7 @@ watch(currentPattern, () => {
               updateNewTag: tag,
               codePattern: currentPattern.patternKey,
               currentIndexTag: index,
+              isPathUnique : pathSelections.size === 1,
               isNextToTag: isNext
             })"
           >

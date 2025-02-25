@@ -1,17 +1,19 @@
 import { 
   CurrentUserMetadatas, 
   GenMetadatasResult, 
-  GenTagKey
+  GenTagKey,
+  MetadataValues
 } from "@/types/metas-type";
-import { defineStore } from "pinia";
+import { defineStore, storeToRefs } from "pinia";
 import { h, ref, toRaw, watch } from "vue";
 import { useNotification } from "./notifications";
 import { useModal } from "./modal";
 import * as R from "ramda";
 import ErrorsDetailModal from "@/components/ErrorsDetailModal.vue";
-import { FieldUniqueValue } from "@/types/vue/vue-types";
 import { Tags } from "@/types/tags";
 import { ChangeTagProps } from "@/types/vue/references";
+import { orderTagValueByIndex } from "../utils/addTag";
+
 
 export const useMedatas = defineStore('metadatas', () => {
   const metadatasGenereted = ref<GenMetadatasResult[]>([]);
@@ -56,8 +58,7 @@ export const useMedatas = defineStore('metadatas', () => {
             currentMetadatas.value[path] = R.assocPath(
               [tag], { 
                 status: 'GENERATED', 
-                tagValue: pattern,
-                patternIndex
+                tagValue: (`${patternIndex}:${pattern}`)
               },
               currentMetadatas.value[path] 
             )
@@ -71,12 +72,20 @@ export const useMedatas = defineStore('metadatas', () => {
     updateSourceDirectory(paths);
   }
 
-  function updateByPathReference([path, tag] : string[], value: Omit<FieldUniqueValue, 'patternIndex'> ){
-    const { patternIndex } = currentMetadatas.value[path][tag as keyof Tags];
-    currentMetadatas.value[path] = R.assocPath(
-      [tag], { value, patternIndex }, currentMetadatas.value[path]
+  const updateByPathReference = R.curry((
+    [path, tag] : [string, string], 
+    tagValue: string,
+    metadatas ?: MetadataValues
+  ) => {
+    currentMetadatas.value[path] = R.assoc(
+      tag, 
+      { tagValue, status: "EDITED" }, 
+      ( metadatas || currentMetadatas.value[path])
     );
-  }
+
+    return currentMetadatas.value[path]
+  })
+
 
   function changeTagsReferences(
     path: string, 
@@ -85,59 +94,40 @@ export const useMedatas = defineStore('metadatas', () => {
       currentIndexTag,
       updateNewTag,
       codePattern,
+      isPathUnique,
       isNextToTag,
     } : ChangeTagProps
   ){
-    const metaInitial = currentMetadatas.value[path];
-    const metaNewTag = metaInitial[currentTag as keyof Tags];
-    const metaOldTag = metaInitial[updateNewTag as keyof Tags];
-    
-    if(R.hasIn(currentTag, metaInitial) && isNextToTag){
+    const metadatas = currentMetadatas.value[path];
+    const hasCurrrentTag = R.hasIn(currentTag, metadatas);
+    const hasUpdateTag = R.hasIn(updateNewTag, metadatas);
 
-      if(codePattern === 'all'){
-        currentMetadatas.value[path] = R.evolve({
-          [currentTag] : () => metaOldTag,
-          [updateNewTag] : () => metaNewTag
-        }, metaInitial)
-
-        return;
-      }
-
-      if(isNextToTag){
-        const isNewTagNextPos =  metaNewTag.patternIndex > (metaOldTag?.patternIndex || currentIndexTag);
-        const getTagValuesWithDefault = (isTagNew ?: boolean) => (
-          isTagNew ? metaNewTag.tagValue : (metaOldTag?.tagValue || updateNewTag)
-        )
-        const orderTagValueByIndex =`${getTagValuesWithDefault(isNewTagNextPos)}/${getTagValuesWithDefault(!isNewTagNextPos)}`; 
- 
-        const mergeTags = R.modify(
-          updateNewTag as keyof Tags, 
-          ({ patternIndex }: FieldUniqueValue) : Partial<FieldUniqueValue> => ({
-            patternIndex,
-            status: 'EDITED',
-            tagValue: orderTagValueByIndex
-          }),
-          metaInitial
-        )
+    // all references : vai evitar erros em metadatas não existentes
+    if(!hasCurrrentTag && !isPathUnique) return;
+      
+    currentMetadatas.value[path] = R.assoc(
+      updateNewTag, { 
+        tagValue: isNextToTag ? 
+          orderTagValueByIndex(
+            metadatas[updateNewTag as keyof Tags].tagValue, 
+            hasCurrrentTag ? 
+            metadatas[currentTag as keyof Tags].tagValue :
+            (`${currentIndexTag}:${currentTag}`)
+          ) :
         
-        currentMetadatas.value[path] = R.dissoc(currentTag as keyof Tags, mergeTags);
-
-        return;        
-      }
-    }
-
-    currentMetadatas.value[path] = {
-      [updateNewTag] : {
-        patternIndex: (metaOldTag?.patternIndex || currentIndexTag),
-        status: 'EDITED',
-        tagValue: (metaNewTag?.tagValue || currentTag)
-      },
-      ...R.dissoc(
-        currentTag as keyof Tags, 
-        metaInitial
-      ),
-    }
-
+          hasCurrrentTag ? 
+          metadatas[currentTag as keyof Tags].tagValue :
+          (`${currentIndexTag}:${currentTag}`),
+        status: "GENERATED"
+      }, 
+      metadatas
+    )
+    
+    currentMetadatas.value[path] = R.dissoc(
+      currentTag as keyof Tags, 
+      currentMetadatas.value[path]
+    );
+    
   }
 
   function updateSource(paths: string[]){
