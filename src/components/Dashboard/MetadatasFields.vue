@@ -23,7 +23,7 @@
 
               <div class="flex gap-5 pl-2 items-center w-56">
                 <component class="w-4 h-4 text-base-white-700" :is="inputProps.icon" />
-                <div class="font-medium text-base-white-700 tracking-wide line-clamp-1">{{ inputProps.tag }}</div>
+                <div class="font-medium text-base-white-700 tracking-wide line-clamp-1">{{ ALL_METADATAS[inputProps.tag].label }}</div>
               </div>
 
               <div class="flex justify-between items-center w-full">
@@ -77,7 +77,6 @@ import {
   WandSparkles, ChevronDown, ChevronUp 
 } from 'lucide-vue-next';
 
-import { CurrentUserMetadatas, GenMetadatasResult } from 'src/types/metas-type';
 import { 
   FieldTagStatus, 
   FieldUniqueValue, 
@@ -91,6 +90,9 @@ import { useMedatas } from '@/stores/metadatas';
 import { storeToRefs } from 'pinia';
 import { useNotification } from '@/stores/notifications';
 import { usePathSelection } from '@/stores/path-selections';
+import { mergeIndexesAndValues } from '@/utils/addTag';
+import { extractInputValue, setInputValueTag } from '@/utils/modifyValue';
+import { ALL_METADATAS } from '../constants/metadatas';
 
 const sourceMetadatas = ref<IndexPathTags<string>>({});
 const isProcessingMetadatas = ref(false);
@@ -273,7 +275,7 @@ function watchSelectFilesChange() {
   inputValues.value = createDefaultTags(tagList);
 
   R.forEachObjIndexed((metadatas, path) => {
-    R.forEachObjIndexed(({ tagValue, status, patternIndex }, tag) => {
+    R.forEachObjIndexed(({ tagValue, status }, tag) => {
       createDefaultInputFields(String(path), { status, tagValue, tag })
     }, metadatas)
   }, currentMetadatas.value);
@@ -289,12 +291,13 @@ function watchChangeInput(tag: keyof Tags) {
         isPathSelected(path) ||
         pathSelections.value.size === 0
       ) {
-        const updatedValue: Omit<FieldUniqueValue, 'patternIndex'> = {
-          status: 'EDITED', tagValue: inputChanged
-        }
+        const updatedValue: FieldUniqueValue =  setInputValueTag(
+          inputChanged, 
+          currentMetadatas.value[path][tag]
+        )
 
-        updateByPathReference([path, tag], updatedValue)
-        createDefaultInputFields(path, { ...updatedValue, tag })
+        updateByPathReference([path, tag], updatedValue.tagValue, undefined);
+        createDefaultInputFields(path, { ...updatedValue, tag });
       }
     }
   }
@@ -303,7 +306,8 @@ function watchChangeInput(tag: keyof Tags) {
 function getInputPropsComputed(tag: keyof Tags) {
   return computed({
     get() {
-      return inputValues.value.get(tag).tagValue
+      const data = inputValues.value.get(tag).tagValue;
+      return data === undefined ? data : extractInputValue(data);
     },
     set: watchChangeInput(tag)
   })
