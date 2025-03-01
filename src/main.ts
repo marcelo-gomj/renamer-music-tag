@@ -9,7 +9,7 @@ if (require('electron-squirrel-startup')) {
 const createWindow = () => {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    title: "renamer-music-tag",
+    title: "GenTagger",
     minWidth: 1000,
     minHeight: 600,
     center: true,

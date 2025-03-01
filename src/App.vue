@@ -1,7 +1,7 @@
 <template>
 	<div class="flex relative flex-col h-[100vh] w-full overflow-hidden">
 		<div class="flex justify-between shrink-0 items-center px-6 h-10 w-full bg-base-dark-200 draggable">
-			<p class="font-bold text-x2">Renamer Music Tag</p>
+			<p class="font-bold text-x2">GenTagger</p>
 
 			<div class="group/close cursor-pointer">
 				<X class="size-5 opacity-40 group-hover/close:opacity-100 stroke-[1.5]" />

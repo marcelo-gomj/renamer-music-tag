@@ -1,15 +1,12 @@
 {
-  "name": "renamer-music-tag",
-  "productName": "renamer-music-tag",
-  "version": "1.0.0",
-  "description": "My Electron application description",
+  "name": "gen-tagger",
+  "productName": "gen-tagger",
+  "version": "0.1.0-beta",
+  "description": "Tag generator by file name",
   "main": ".vite/build/main.js",
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
-    "log": "tsx watch src/preload/test.ts",
-    "log:split": "tsx watch src/preload/split-test.test.ts",
-    "test:meta": "tsx watch src/preload/test-metadatas.ts",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
     "lint": "eslint --ext .ts,.tsx ."

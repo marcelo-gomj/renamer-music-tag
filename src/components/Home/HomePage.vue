@@ -2,8 +2,8 @@
   <div class="flex relative justify-center items-center w-full h-full overflow-y-hidden">
     <div class="flex flex-col gap-6 w-[700px] h-full overflow-y-hidden">
       <div class="flex space-y-2 flex-col py-8">
-        <div class="font-medium text-3xl text-base-white-200">Auto Renamer Music Tags</div>
-        <p class="text-x2 font-medium text-base-white-600">Generate music metadados automatically</p>
+        <div class="font-medium text-3xl text-base-white-200">GenTagger</div>
+        <p class="text-x2 font-medium text-base-white-600">Generate tags by filename</p>
       </div>
 
       <div class="flex justify-between">
